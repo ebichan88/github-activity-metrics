@@ -1,168 +1,94 @@
 ---
-description: Execute the implementation planning workflow using the plan template to generate design artifacts.
+description: 計画テンプレートを使用して設計成果物を生成する実装計画ワークフローを実行します。
 handoffs: 
-  - label: Create Tasks
+  - label: speckit.tasks
     agent: speckit.tasks
-    prompt: Break the plan into tasks
+    prompt: 計画をタスクに分解します
     send: true
-  - label: Create Checklist
+  - label: speckit.checklist
     agent: speckit.checklist
-    prompt: Create a checklist for the following domain...
+    prompt: 以下のドメイン用のチェックリストを作成します...
 ---
 
-## User Input
+## ユーザー入力
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+続行する前に、ユーザー入力を考慮する**必要があります**（空でない場合）。
 
-## Pre-Execution Checks
+## 概要
 
-**Check for extension hooks (before planning)**:
-- Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.before_plan` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+1. **セットアップ**: リポジトリルートから `.specify/scripts/bash/setup-plan.sh --json` を実行し、JSONをパースしてFEATURE_SPEC、IMPL_PLAN、SPECS_DIR、BRANCHを取得。引数に "I'm Groot" のようなシングルクォートがある場合、エスケープ構文を使用: 例 'I'\''m Groot'（または可能なら二重引用符: "I'm Groot"）。
 
-    **Optional Pre-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+2. **コンテキストを読み込み**: FEATURE_SPECと `.specify/memory/constitution.md` を読み込む。IMPL_PLANテンプレート（既にコピー済み）を読み込む。
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+3. **スタイルガイドを読み込み**: `.specify/README.md` を読み込んで用語集とスタイルガイドを把握。
+   - セクション見出しには規定の絵文字を使用する
+   - 用語対応表に従って一貫した日本語表現を使用する
+   - 英語維持する特殊文字列（マーカー、ステータス、ファイル名等）は変換しない
 
-    **Automatic Pre-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
+4. **計画ワークフローを実行**: IMPL_PLANテンプレートの構造に従って:
+   - 技術コンテキストを記入（不明点は "NEEDS CLARIFICATION" としてマーク）
+   - 憲章からConstitution Checkセクションを記入
+   - ゲートを評価（正当な理由なしに違反がある場合はERROR）
+   - Phase 0: research.mdを生成（すべてのNEEDS CLARIFICATIONを解決）
+   - Phase 1: data-model.md、contracts/、quickstart.mdを生成
+   - Phase 1: エージェントスクリプトを実行してエージェントコンテキストを更新
+   - 設計後にConstitution Checkを再評価
 
-    Wait for the result of the hook command before proceeding to the Outline.
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+5. **停止して報告**: コマンドはPhase 2計画後に終了。ブランチ、IMPL_PLANパス、生成された成果物を報告。
 
-## Outline
+## フェーズ
 
-1. **Setup**: Run `.specify/scripts/bash/setup-plan.sh --json` from repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, SPECS_DIR, BRANCH. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+### Phase 0: 概要とリサーチ
 
-2. **Load context**: Read FEATURE_SPEC and `.specify/memory/constitution.md`. Load IMPL_PLAN template (already copied).
+1. **上記の技術コンテキストから不明点を抽出**:
+   - 各NEEDS CLARIFICATION → リサーチタスク
+   - 各依存関係 → ベストプラクティスタスク
+   - 各統合 → パターンタスク
 
-3. **Execute plan workflow**: Follow the structure in IMPL_PLAN template to:
-   - Fill Technical Context (mark unknowns as "NEEDS CLARIFICATION")
-   - Fill Constitution Check section from constitution
-   - Evaluate gates (ERROR if violations unjustified)
-   - Phase 0: Generate research.md (resolve all NEEDS CLARIFICATION)
-   - Phase 1: Generate data-model.md, contracts/, quickstart.md
-   - Phase 1: Update agent context by running the agent script
-   - Re-evaluate Constitution Check post-design
-
-## Mandatory Post-Execution Hooks
-
-**You MUST complete this section before reporting completion to the user.**
-
-Check if `.specify/extensions.yml` exists in the project root.
-- If it does not exist, or no hooks are registered under `hooks.after_plan`, skip to the Completion Report.
-- If it exists, read it and look for entries under the `hooks.after_plan` key.
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue to the Completion Report.
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Mandatory hook** (`optional: false`) — **You MUST emit `EXECUTE_COMMAND:` for each mandatory hook**:
-    ```
-    ## Extension Hooks
-
-    **Automatic Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-    ```
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
-
-    **Optional Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
-
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-
-## Completion Report
-
-Command ends after Phase 2 planning. Report branch, IMPL_PLAN path, and generated artifacts.
-
-## Phases
-
-### Phase 0: Outline & Research
-
-1. **Extract unknowns from Technical Context** above:
-   - For each NEEDS CLARIFICATION → research task
-   - For each dependency → best practices task
-   - For each integration → patterns task
-
-2. **Generate and dispatch research agents**:
+2. **リサーチエージェントを生成して実行**:
 
    ```text
-   For each unknown in Technical Context:
-     Task: "Research {unknown} for {feature context}"
-   For each technology choice:
-     Task: "Find best practices for {tech} in {domain}"
+   技術コンテキストの各不明点について:
+     タスク: "{機能コンテキスト}のための{不明点}をリサーチ"
+   各技術選択について:
+     タスク: "{ドメイン}における{技術}のベストプラクティスを調査"
    ```
 
-3. **Consolidate findings** in `research.md` using format:
-   - Decision: [what was chosen]
-   - Rationale: [why chosen]
-   - Alternatives considered: [what else evaluated]
+3. **調査結果を統合** して `research.md` に以下の形式で記録:
+   - 決定: [何を選択したか]
+   - 根拠: [なぜ選択したか]
+   - 検討した代替案: [他に何を評価したか]
 
-**Output**: research.md with all NEEDS CLARIFICATION resolved
+**出力**: すべてのNEEDS CLARIFICATIONが解決されたresearch.md
 
-### Phase 1: Design & Contracts
+### Phase 1: 設計とコントラクト
 
-**Prerequisites:** `research.md` complete
+**前提条件:** `research.md` 完了
 
-1. **Extract entities from feature spec** → `data-model.md`:
-   - Entity name, fields, relationships
-   - Validation rules from requirements
-   - State transitions if applicable
+1. **機能仕様からエンティティを抽出** → `data-model.md`:
+   - エンティティ名、フィールド、リレーション
+   - 要件からのバリデーションルール
+   - 該当する場合は状態遷移
 
-2. **Define interface contracts** (if project has external interfaces) → `/contracts/`:
-   - Identify what interfaces the project exposes to users or other systems
-   - Document the contract format appropriate for the project type
-   - Examples: public APIs for libraries, command schemas for CLI tools, endpoints for web services, grammars for parsers, UI contracts for applications
-   - Skip if project is purely internal (build scripts, one-off tools, etc.)
+2. **機能要件からAPIコントラクトを生成**:
+   - 各ユーザーアクション → エンドポイント
+   - 標準的なREST/GraphQLパターンを使用
+   - OpenAPI/GraphQLスキーマを `/contracts/` に出力
 
-3. **Create quickstart validation guide** → `quickstart.md`:
-   - Document runnable validation scenarios that prove the feature works end-to-end
-   - Include prerequisites, setup commands, test/run commands, and expected outcomes
-   - Use links or references to contracts and data model details instead of duplicating them
-   - Do not include full implementation code, model/service/controller bodies, migrations, or complete test suites
-   - Keep this artifact as a validation/run guide; implementation details belong in `tasks.md` and the implementation phase
+3. **エージェントコンテキストの更新**:
+   - `.specify/scripts/bash/update-agent-context.sh copilot` を実行
+   - これらのスクリプトは使用中のAIエージェントを検出
+   - 適切なエージェント固有のコンテキストファイルを更新
+   - 現在の計画からの新しい技術のみを追加
+   - マーカー間の手動追加を保持
 
-4. **Agent context update**:
-   - Update the plan reference between the `<!-- SPECKIT START -->` and `<!-- SPECKIT END -->` markers in `.github/copilot-instructions.md` to point to the plan file created in step 1 (the IMPL_PLAN path)
+**出力**: data-model.md、/contracts/*、quickstart.md、エージェント固有ファイル
 
-**Output**: data-model.md, /contracts/*, quickstart.md, updated agent context file
+## 重要なルール
 
-## Key rules
-
-- Use absolute paths for filesystem operations; use project-relative paths for references in documentation and agent context files
-- ERROR on gate failures or unresolved clarifications
-
-## Done When
-
-- [ ] Plan workflow executed and design artifacts generated
-- [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
-- [ ] Completion reported to user with branch, plan path, and generated artifacts
+- 絶対パスを使用
+- ゲート失敗または未解決の明確化でERROR

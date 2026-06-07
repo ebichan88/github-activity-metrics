@@ -1,97 +1,36 @@
 ---
-description: Convert existing tasks into actionable, dependency-ordered GitHub issues for the feature based on available design artifacts.
+description: 利用可能な設計成果物に基づいて、既存のタスクをアクション可能な依存関係順のGitHub Issueに変換します。
 tools: ['github/github-mcp-server/issue_write']
 ---
 
-## User Input
+## ユーザー入力
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+続行する前に、ユーザー入力を考慮する**必要があります**（空でない場合）。
 
-## Pre-Execution Checks
+## 概要
 
-**Check for extension hooks (before tasks-to-issues conversion)**:
-- Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.before_taskstoissues` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+1. リポジトリルートから `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` を実行し、FEATURE_DIRとAVAILABLE_DOCSリストをパース。すべてのパスは絶対パスである必要があります。引数に "I'm Groot" のようなシングルクォートがある場合、エスケープ構文を使用: 例 'I'\''m Groot'（または可能なら二重引用符: "I'm Groot"）。
 
-    **Optional Pre-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+2. **スタイルガイドを読み込み**: `.specify/README.md` を読み込んで用語集とスタイルガイドを把握。
+   - セクション見出しには規定の絵文字を使用する
+   - 用語対応表に従って一貫した日本語表現を使用する
+   - 英語維持する特殊文字列（マーカー、ステータス、ファイル名等）は変換しない
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
-
-    **Automatic Pre-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-
-    Wait for the result of the hook command before proceeding to the Outline.
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
-
-## Outline
-
-1. Run `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
-1. **IF EXISTS**: Load `.specify/memory/constitution.md` for project principles and governance constraints.
-1. From the executed script, extract the path to **tasks**.
-1. Get the Git remote by running:
+3. 実行されたスクリプトから、**tasks**へのパスを抽出。
+4. 以下を実行してGitリモートを取得:
 
 ```bash
 git config --get remote.origin.url
 ```
 
 > [!CAUTION]
-> ONLY PROCEED TO NEXT STEPS IF THE REMOTE IS A GITHUB URL
+> リモートがGITHUB URLの場合にのみ次のステップに進む
 
-1. For each task in the list, use the GitHub MCP server to create a new issue in the repository that is representative of the Git remote.
+5. リスト内の各タスクについて、GitHub MCPサーバーを使用して、Gitリモートを代表するリポジトリに新しいIssueを作成。
 
 > [!CAUTION]
-> UNDER NO CIRCUMSTANCES EVER CREATE ISSUES IN REPOSITORIES THAT DO NOT MATCH THE REMOTE URL
-
-## Post-Execution Checks
-
-**Check for extension hooks (after tasks-to-issues conversion)**:
-Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.after_taskstoissues` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
-
-    **Optional Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
-
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
-
-    **Automatic Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+> リモートURLと一致しないリポジトリにIssueを作成することは絶対にしない

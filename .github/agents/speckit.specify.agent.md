@@ -1,342 +1,262 @@
 ---
-description: Create or update the feature specification from a natural language feature description.
+description: 自然言語の機能説明から機能仕様を作成または更新します。
 handoffs: 
-  - label: Build Technical Plan
+  - label: speckit.plan
     agent: speckit.plan
-    prompt: Create a plan for the spec. I am building with...
-  - label: Clarify Spec Requirements
+    prompt: 仕様の計画を作成します。使用技術は...
+  - label: speckit.clarify
     agent: speckit.clarify
-    prompt: Clarify specification requirements
+    prompt: 仕様要件を明確化します
     send: true
 ---
 
-## User Input
+## ユーザー入力
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+続行する前に、ユーザー入力を考慮する**必要があります**（空でない場合）。
 
-## Pre-Execution Checks
+## 概要
 
-**Check for extension hooks (before specification)**:
-- Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.before_specify` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+ユーザーがトリガーメッセージで `/speckit.specify` の後に入力したテキストが機能説明です。`$ARGUMENTS` が文字通り下に表示されていても、この会話で常に利用可能であると仮定してください。空のコマンドを提供した場合を除き、ユーザーに繰り返すよう依頼しないでください。
 
-    **Optional Pre-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+その機能説明に基づいて、以下を実行します:
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+1. **ブランチ用の簡潔な短縮名を生成**（2-4単語）:
+   - 機能説明を分析し、最も意味のあるキーワードを抽出
+   - 機能の本質を捉える2-4単語の短縮名を作成
+   - 可能な場合はアクション-名詞形式を使用（例: "add-user-auth", "fix-payment-bug"）
+   - 技術用語と略語を保持（OAuth2, API, JWT など）
+   - 一目で機能を理解できる程度に簡潔かつ説明的に
+   - 例:
+     - "ユーザー認証を追加したい" → "user-auth"
+     - "API用のOAuth2統合を実装" → "oauth2-api-integration"
+     - "分析用のダッシュボードを作成" → "analytics-dashboard"
+     - "支払い処理のタイムアウトバグを修正" → "fix-payment-timeout"
 
-    **Automatic Pre-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
+2. **新規作成前に既存ブランチを確認**:
 
-    Wait for the result of the hook command before proceeding to the Outline.
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+   a. まず、最新情報を確保するためにすべてのリモートブランチをフェッチ:
 
-## Outline
-
-The text the user typed after `/speckit.specify` in the triggering message **is** the feature description. Assume you always have it available in this conversation even if `$ARGUMENTS` appears literally below. Do not ask the user to repeat it unless they provided an empty command.
-
-Given that feature description, do this:
-
-1. **Generate a concise short name** (2-4 words) for the feature:
-   - Analyze the feature description and extract the most meaningful keywords
-   - Create a 2-4 word short name that captures the essence of the feature
-   - Use action-noun format when possible (e.g., "add-user-auth", "fix-payment-bug")
-   - Preserve technical terms and acronyms (OAuth2, API, JWT, etc.)
-   - Keep it concise but descriptive enough to understand the feature at a glance
-   - Examples:
-     - "I want to add user authentication" → "user-auth"
-     - "Implement OAuth2 integration for the API" → "oauth2-api-integration"
-     - "Create a dashboard for analytics" → "analytics-dashboard"
-     - "Fix payment processing timeout bug" → "fix-payment-timeout"
-
-2. **Branch creation** (optional, via hook):
-
-   If a `before_specify` hook ran successfully in the Pre-Execution Checks above, it will have created/switched to a git branch and output JSON containing `BRANCH_NAME` and `FEATURE_NUM`. Note these values for reference, but the branch name does **not** dictate the spec directory name.
-
-   If the user explicitly provided `GIT_BRANCH_NAME`, pass it through to the hook so the branch script uses the exact value as the branch name (bypassing all prefix/suffix generation).
-
-3. **Create the spec feature directory**:
-
-   Specs live under the default `specs/` directory unless the user explicitly provides `SPECIFY_FEATURE_DIRECTORY`.
-
-   **Resolution order for `SPECIFY_FEATURE_DIRECTORY`**:
-   1. If the user explicitly provided `SPECIFY_FEATURE_DIRECTORY` (e.g., via environment variable, argument, or configuration), use it as-is
-   2. Otherwise, auto-generate it under `specs/`:
-      - Check `.specify/init-options.json` for `branch_numbering`
-      - If `"timestamp"`: prefix is `YYYYMMDD-HHMMSS` (current timestamp)
-      - If `"sequential"` or absent: prefix is `NNN` (next available 3-digit number after scanning existing directories in `specs/`)
-      - Construct the directory name: `<prefix>-<short-name>` (e.g., `003-user-auth` or `20260319-143022-user-auth`)
-      - Set `SPECIFY_FEATURE_DIRECTORY` to `specs/<directory-name>`
-
-   **Create the directory and spec file**:
-   - `mkdir -p SPECIFY_FEATURE_DIRECTORY`
-   - Resolve the active `spec-template` through the Spec Kit preset/template resolution stack (equivalent to `specify preset resolve spec-template`)
-   - Copy the resolved `spec-template` file to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
-   - Set `SPEC_FILE` to `SPECIFY_FEATURE_DIRECTORY/spec.md`
-   - Persist the resolved path to `.specify/feature.json`:
-     ```json
-     {
-       "feature_directory": "<resolved feature dir>"
-     }
-     ```
-     Write the actual resolved directory path value (for example, `specs/003-user-auth`), not the literal string `SPECIFY_FEATURE_DIRECTORY`.
-     This allows downstream commands (`/speckit.plan`, `/speckit.tasks`, etc.) to locate the feature directory without relying on git branch name conventions.
-
-   **IMPORTANT**:
-   - You must only create one feature per `/speckit.specify` invocation
-   - The spec directory name and the git branch name are independent — they may be the same but that is the user's choice
-   - The spec directory and file are always created by this command, never by the hook
-
-4. Load the resolved active `spec-template` file to understand required sections.
-
-5. **IF EXISTS**: Load `.specify/memory/constitution.md` for project principles and governance constraints.
-
-6. Follow this execution flow:
-    1. Parse user description from arguments
-       If empty: ERROR "No feature description provided"
-    2. Extract key concepts from description
-       Identify: actors, actions, data, constraints
-    3. For unclear aspects:
-       - Make informed guesses based on context and industry standards
-       - Only mark with [NEEDS CLARIFICATION: specific question] if:
-         - The choice significantly impacts feature scope or user experience
-         - Multiple reasonable interpretations exist with different implications
-         - No reasonable default exists
-       - **LIMIT: Maximum 3 [NEEDS CLARIFICATION] markers total**
-       - Prioritize clarifications by impact: scope > security/privacy > user experience > technical details
-    4. Fill User Scenarios & Testing section
-       If no clear user flow: ERROR "Cannot determine user scenarios"
-    5. Generate Functional Requirements
-       Each requirement must be testable
-       Use reasonable defaults for unspecified details (document assumptions in Assumptions section)
-    6. Define Success Criteria
-       Create measurable, technology-agnostic outcomes
-       Include both quantitative metrics (time, performance, volume) and qualitative measures (user satisfaction, task completion)
-       Each criterion must be verifiable without implementation details
-    7. Identify Key Entities (if data involved)
-    8. Return: SUCCESS (spec ready for planning)
-
-6. Write the specification to SPEC_FILE using the template structure, replacing placeholders with concrete details derived from the feature description (arguments) while preserving section order and headings.
-
-7. **Specification Quality Validation**: After writing the initial spec, validate it against quality criteria:
-
-   a. **Create Spec Quality Checklist**: Generate a checklist file at `SPECIFY_FEATURE_DIRECTORY/checklists/requirements.md` using the checklist template structure with these validation items:
-
-      ```markdown
-      # Specification Quality Checklist: [FEATURE NAME]
-      
-      **Purpose**: Validate specification completeness and quality before proceeding to planning
-      **Created**: [DATE]
-      **Feature**: [Link to spec.md]
-      
-      ## Content Quality
-      
-      - [ ] No implementation details (languages, frameworks, APIs)
-      - [ ] Focused on user value and business needs
-      - [ ] Written for non-technical stakeholders
-      - [ ] All mandatory sections completed
-      
-      ## Requirement Completeness
-      
-      - [ ] No [NEEDS CLARIFICATION] markers remain
-      - [ ] Requirements are testable and unambiguous
-      - [ ] Success criteria are measurable
-      - [ ] Success criteria are technology-agnostic (no implementation details)
-      - [ ] All acceptance scenarios are defined
-      - [ ] Edge cases are identified
-      - [ ] Scope is clearly bounded
-      - [ ] Dependencies and assumptions identified
-      
-      ## Feature Readiness
-      
-      - [ ] All functional requirements have clear acceptance criteria
-      - [ ] User scenarios cover primary flows
-      - [ ] Feature meets measurable outcomes defined in Success Criteria
-      - [ ] No implementation details leak into specification
-      
-      ## Notes
-      
-      - Items marked incomplete require spec updates before `/speckit.clarify` or `/speckit.plan`
+      ```bash
+      git fetch --all --prune
       ```
 
-   b. **Run Validation Check**: Review the spec against each checklist item:
-      - For each item, determine if it passes or fails
-      - Document specific issues found (quote relevant spec sections)
+   b. 短縮名に対するすべてのソースで最大の機能番号を見つける:
+      - リモートブランチ: `git ls-remote --heads origin | grep -E 'refs/heads/[0-9]+-<short-name>$'`
+      - ローカルブランチ: `git branch | grep -E '^[* ]*[0-9]+-<short-name>$'`
+      - Specsディレクトリ: `specs/[0-9]+-<short-name>` に一致するディレクトリを確認
 
-   c. **Handle Validation Results**:
+   c. 次に利用可能な番号を決定:
+      - 3つのソースすべてから数字を抽出
+      - 最大番号Nを見つける
+      - 新しいブランチ番号にN+1を使用
 
-      - **If all items pass**: Mark checklist complete and proceed to the Mandatory Post-Execution Hooks section
+   d. 計算された番号と短縮名でスクリプト `.specify/scripts/bash/create-new-feature.sh --json "$ARGUMENTS"` を実行:
+      - 機能説明と共に `--number N+1` と `--short-name "your-short-name"` を渡す
+      - Bash例: `.specify/scripts/bash/create-new-feature.sh --json --number 5 --short-name "user-auth" "Add user authentication"`
+      - PowerShell例: `.specify/scripts/bash/create-new-feature.sh -Json -Number 5 -ShortName "user-auth" "Add user authentication"`
 
-      - **If items fail (excluding [NEEDS CLARIFICATION])**:
-        1. List the failing items and specific issues
-        2. Update the spec to address each issue
-        3. Re-run validation until all items pass (max 3 iterations)
-        4. If still failing after 3 iterations, document remaining issues in checklist notes and warn user
+   **重要**:
+   - 最大番号を見つけるために3つのソース（リモートブランチ、ローカルブランチ、specsディレクトリ）すべてを確認
+   - 正確な短縮名パターンを持つブランチ/ディレクトリのみに一致
+   - この短縮名で既存のブランチ/ディレクトリが見つからない場合、番号1から開始
+   - 機能ごとにこのスクリプトを1回だけ実行する必要がある
+   - JSONはターミナルに出力として提供される - 探しているコンテンツを取得するために常に参照
+   - JSON出力にはBRANCH_NAMEとSPEC_FILEパスが含まれる
+   - 引数に "I'm Groot" のようなシングルクォートがある場合、エスケープ構文を使用: 例 'I'\''m Groot'（または可能なら二重引用符: "I'm Groot"）
 
-      - **If [NEEDS CLARIFICATION] markers remain**:
-        1. Extract all [NEEDS CLARIFICATION: ...] markers from the spec
-        2. **LIMIT CHECK**: If more than 3 markers exist, keep only the 3 most critical (by scope/security/UX impact) and make informed guesses for the rest
-        3. For each clarification needed (max 3), present options to user in this format:
+3. `.specify/README.md` を読み込んで用語集とスタイルガイドを把握。
+   - セクション見出しには規定の絵文字を使用する
+   - 用語対応表に従って一貫した日本語表現を使用する
+   - 英語維持する特殊文字列（マーカー、ステータス、ファイル名等）は変換しない
+
+4. `.specify/templates/spec-template.md` を読み込んで必要なセクションを理解。
+   - テンプレートには絵文字付きセクション見出し（📋, 👤, 📝, 🎯）と目次が含まれる
+   - メタデータはテーブル形式で、入力は別セクション（`## 📥 1. 入力`）として分離されている
+
+5. 以下の実行フローに従う:
+
+    1. 入力からユーザー説明を解析
+       空の場合: ERROR "機能説明が提供されていません"
+    2. 説明から主要な概念を抽出
+       識別: アクター、アクション、データ、制約
+    3. 不明確な点について:
+       - コンテキストと業界標準に基づいて情報に基づいた推測を行う
+       - 以下の場合のみ [NEEDS CLARIFICATION: 具体的な質問] でマーク:
+         - 選択が機能スコープやユーザー体験に大きな影響を与える
+         - 異なる意味を持つ複数の合理的な解釈が存在する
+         - 合理的なデフォルトが存在しない
+       - **制限: 最大3つの [NEEDS CLARIFICATION] マーカー**
+       - 影響度で明確化の優先順位: スコープ > セキュリティ/プライバシー > ユーザー体験 > 技術詳細
+    4. ユーザーシナリオとテストセクションを記入
+       明確なユーザーフローがない場合: ERROR "ユーザーシナリオを決定できません"
+    5. 機能要件を生成
+       各要件はテスト可能である必要がある
+       未指定の詳細には合理的なデフォルトを使用（前提条件セクションに仮定を文書化）
+    6. 成功基準を定義
+       測定可能で技術非依存の成果を作成
+       定量的指標（時間、パフォーマンス、量）と定性的指標（ユーザー満足度、タスク完了）の両方を含む
+       各基準は実装詳細なしで検証可能である必要がある
+    7. 主要エンティティを特定（データが関与する場合）
+    8. 戻り値: SUCCESS（計画の準備完了）
+
+6. プレースホルダーを機能説明（引数）から導出された具体的な詳細で置き換えながら、テンプレート構造を使用してSPEC_FILEに仕様を書き込む。セクションの順序と見出しは保持。
+
+   **ユーザーストーリーの見出し形式**:
+   - セクション「ユーザーストーリー」内のH3見出しは以下の形式を使用:
+     - `### 2.1 US1: [タイトル] [P1]`
+     - `### 2.2 US2: [タイトル] [P2]`
+     - `### 2.3 US3: [タイトル] [P3]`
+   - US = User Storyの略称、tasks.mdの[US1]ラベルと対応
+   - [Pn] = 優先度ラベル（P1=必須/MVP, P2=重要, P3=あれば良い）
+
+   **目次の生成ルール**:
+   - 目次はH3レベルまで含める（H4は含めない）
+   - テンプレートの目次は構造の参考例として使用
+   - 実際の仕様作成時は、記述した見出しから動的にアンカーリンクを生成する
+   - H3項目は親のH2の下にインデント（2スペース + `-`）で配置
+   - アンカーリンク生成ルール（GitHub Markdown仕様）:
+     - 絵文字 → `-` に置換
+     - ピリオド `.` → 削除
+     - スペース → `-` に変換
+     - 括弧 `[]()（）` → 削除
+     - 大文字 → 小文字に変換
+     - 同一アンカーが複数存在する場合 → 2つ目以降に `-1`, `-2` を付与
+   - 例: `### 2.1 ユーザー登録` → `[2.1 ユーザー登録](#21-ユーザー登録)`
+
+   **メタデータテーブルの記入**:
+   - `[FEATURE NAME]`: 機能説明から導出した機能名
+   - `[###-feature-name]`: スクリプトが生成したブランチ名
+   - `[DATE]`: 現在の日付（YYYY-MM-DD形式）
+
+   **入力セクションの記入**:
+   - `$ARGUMENTS` を実際のユーザー入力で置き換える
+   - 長い入力の場合、コメントのヒントに従って整理することを推奨
+
+7. **仕様品質検証**: 初期仕様を書いた後、品質基準に対して検証:
+
+   a. **仕様品質チェックリストを作成**: `.specify/templates/requirements-template.md` を読み込み、テンプレート構造を使用して `FEATURE_DIR/checklists/requirements.md` にチェックリストファイルを生成:
+      - `[FEATURE NAME]`: 機能説明から導出した機能名で置き換え
+      - `[DATE]`: 現在の日付（YYYY-MM-DD形式）で置き換え
+      - `[spec.mdへのリンク]`: 機能の spec.md への相対パスで置き換え
+
+   b. **検証チェックを実行**: 各チェックリスト項目に対して仕様をレビュー:
+      - 各項目について合格か不合格かを判断
+      - 見つかった具体的な問題を文書化（関連する仕様セクションを引用）
+
+   c. **検証結果の処理**:
+
+      - **すべての項目が合格の場合**: チェックリストを完了としてマークし、ステップ6に進む
+
+      - **項目が不合格の場合（[NEEDS CLARIFICATION] を除く）**:
+        1. 不合格の項目と具体的な問題をリスト
+        2. 各問題に対処するために仕様を更新
+        3. すべての項目が合格するまで検証を再実行（最大3回の反復）
+        4. 3回の反復後もまだ不合格の場合、残りの問題をチェックリストのノートに文書化しユーザーに警告
+
+      - **[NEEDS CLARIFICATION] マーカーが残っている場合**:
+        1. 仕様からすべての [NEEDS CLARIFICATION: ...] マーカーを抽出
+        2. **制限チェック**: 3つ以上のマーカーが存在する場合、最も重要な3つのみを保持（スコープ/セキュリティ/UXの影響度順）し、残りは情報に基づいた推測を行う
+        3. 各明確化が必要な項目（最大3つ）について、以下の形式でユーザーにオプションを提示:
 
            ```markdown
-           ## Question [N]: [Topic]
+           ## 質問 [N]: [トピック]
            
-           **Context**: [Quote relevant spec section]
+           **コンテキスト**: [関連する仕様セクションを引用]
            
-           **What we need to know**: [Specific question from NEEDS CLARIFICATION marker]
+           **知る必要があること**: [NEEDS CLARIFICATIONマーカーからの具体的な質問]
            
-           **Suggested Answers**:
+           **推奨回答**:
            
-           | Option | Answer | Implications |
+           | オプション | 回答 | 影響 |
            |--------|--------|--------------|
-           | A      | [First suggested answer] | [What this means for the feature] |
-           | B      | [Second suggested answer] | [What this means for the feature] |
-           | C      | [Third suggested answer] | [What this means for the feature] |
-           | Custom | Provide your own answer | [Explain how to provide custom input] |
+           | A      | [最初の推奨回答] | [機能への影響] |
+           | B      | [2番目の推奨回答] | [機能への影響] |
+           | C      | [3番目の推奨回答] | [機能への影響] |
+           | カスタム | 独自の回答を提供 | [カスタム入力の提供方法を説明] |
            
-           **Your choice**: _[Wait for user response]_
+           **選択**: _[ユーザーの応答を待つ]_
            ```
 
-        4. **CRITICAL - Table Formatting**: Ensure markdown tables are properly formatted:
-           - Use consistent spacing with pipes aligned
-           - Each cell should have spaces around content: `| Content |` not `|Content|`
-           - Header separator must have at least 3 dashes: `|--------|`
-           - Test that the table renders correctly in markdown preview
-        5. Number questions sequentially (Q1, Q2, Q3 - max 3 total)
-        6. Present all questions together before waiting for responses
-        7. Wait for user to respond with their choices for all questions (e.g., "Q1: A, Q2: Custom - [details], Q3: B")
-        8. Update the spec by replacing each [NEEDS CLARIFICATION] marker with the user's selected or provided answer
-        9. Re-run validation after all clarifications are resolved
+        4. **重要 - テーブルフォーマット**: マークダウンテーブルが正しくフォーマットされていることを確認:
+           - パイプを揃えて一貫したスペーシング
+           - 各セルはコンテンツの周りにスペースがある: `| コンテンツ |` であり `|コンテンツ|` ではない
+           - ヘッダー区切りは少なくとも3つのダッシュが必要: `|--------|`
+           - テーブルがマークダウンプレビューで正しくレンダリングされることをテスト
+        5. 質問に連続番号を付ける（Q1, Q2, Q3 - 最大3つ）
+        6. 応答を待つ前にすべての質問を一緒に提示
+        7. ユーザーがすべての質問に対する選択で応答するのを待つ（例: "Q1: A, Q2: カスタム - [詳細], Q3: B"）
+        8. 各 [NEEDS CLARIFICATION] マーカーをユーザーが選択または提供した回答で置き換えて仕様を更新
+        9. すべての明確化が解決された後に検証を再実行
 
-   d. **Update Checklist**: After each validation iteration, update the checklist file with current pass/fail status
+   d. **チェックリストを更新**: 各検証反復の後、現在の合格/不合格ステータスでチェックリストファイルを更新
 
-## Mandatory Post-Execution Hooks
+7. ブランチ名、仕様ファイルパス、チェックリスト結果、次のフェーズ（`/speckit.clarify` または `/speckit.plan`）の準備状況で完了を報告。
 
-**You MUST complete this section before reporting completion to the user.**
+**注意:** スクリプトは新しいブランチを作成してチェックアウトし、書き込む前に仕様ファイルを初期化します。
 
-Check if `.specify/extensions.yml` exists in the project root.
-- If it does not exist, or no hooks are registered under `hooks.after_specify`, skip to the Completion Report.
-- If it exists, read it and look for entries under the `hooks.after_specify` key.
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue to the Completion Report.
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Mandatory hook** (`optional: false`) — **You MUST emit `EXECUTE_COMMAND:` for each mandatory hook**:
-    ```
-    ## Extension Hooks
+## 一般的なガイドライン
 
-    **Automatic Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-    ```
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+## クイックガイドライン
 
-    **Optional Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+- ユーザーが**何を**必要とし**なぜ**かに焦点を当てる。
+- 実装方法を避ける（技術スタック、API、コード構造なし）。
+- 開発者ではなくビジネスステークホルダー向けに記述。
+- 仕様に埋め込まれたチェックリストは作成しない。それは別のコマンドになります。
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
+### セクション要件
 
-## Completion Report
+- **必須セクション**: すべての機能で完了する必要がある
+- **オプションセクション**: 機能に関連する場合のみ含める
+- セクションが適用されない場合、完全に削除（「N/A」のままにしない）
 
-Report completion to the user with:
-- `SPECIFY_FEATURE_DIRECTORY` — the feature directory path
-- `SPEC_FILE` — the spec file path
-- Checklist results summary
-- Readiness for the next phase (`/speckit.clarify` or `/speckit.plan`)
+### AI生成用
 
-**NOTE:** Branch creation is handled by the `before_specify` hook (git extension). Spec directory and file creation are always handled by this core command.
+ユーザープロンプトからこの仕様を作成する際:
 
-## Quick Guidelines
+1. **情報に基づいた推測を行う**: ギャップを埋めるためにコンテキスト、業界標準、一般的なパターンを使用
+2. **仮定を文書化**: 前提条件セクションに合理的なデフォルトを記録
+3. **明確化を制限**: 最大3つの [NEEDS CLARIFICATION] マーカー - 以下の重要な決定にのみ使用:
+   - 機能スコープやユーザー体験に大きな影響を与える
+   - 異なる意味を持つ複数の合理的な解釈がある
+   - 合理的なデフォルトがない
+4. **明確化の優先順位**: スコープ > セキュリティ/プライバシー > ユーザー体験 > 技術詳細
+5. **テスターのように考える**: すべての曖昧な要件は「テスト可能で曖昧でない」チェックリスト項目で不合格になるべき
+6. **明確化が必要な一般的な領域**（合理的なデフォルトがない場合のみ）:
+   - 機能のスコープと境界（特定のユースケースを含める/除外する）
+   - ユーザータイプと権限（複数の矛盾する解釈が可能な場合）
+   - セキュリティ/コンプライアンス要件（法的/財務的に重要な場合）
 
-- Focus on **WHAT** users need and **WHY**.
-- Avoid HOW to implement (no tech stack, APIs, code structure).
-- Written for business stakeholders, not developers.
-- DO NOT create any checklists that are embedded in the spec. That will be a separate command.
+**合理的なデフォルトの例**（これらについては質問しない）:
 
-### Section Requirements
+- データ保持: ドメインの業界標準プラクティス
+- パフォーマンス目標: 指定されない限り標準的なWeb/モバイルアプリの期待
+- エラー処理: 適切なフォールバックを持つユーザーフレンドリーなメッセージ
+- 認証方法: Webアプリの標準的なセッションベースまたはOAuth2
+- 統合パターン: 指定されない限りRESTful API
 
-- **Mandatory sections**: Must be completed for every feature
-- **Optional sections**: Include only when relevant to the feature
-- When a section doesn't apply, remove it entirely (don't leave as "N/A")
+### 成功基準ガイドライン
 
-### For AI Generation
+成功基準は以下である必要がある:
 
-When creating this spec from a user prompt:
+1. **測定可能**: 特定の指標を含む（時間、パーセンテージ、数、率）
+2. **技術非依存**: フレームワーク、言語、データベース、ツールへの言及なし
+3. **ユーザー中心**: システム内部ではなくユーザー/ビジネスの観点から成果を記述
+4. **検証可能**: 実装詳細を知らなくてもテスト/検証可能
 
-1. **Make informed guesses**: Use context, industry standards, and common patterns to fill gaps
-2. **Document assumptions**: Record reasonable defaults in the Assumptions section
-3. **Limit clarifications**: Maximum 3 [NEEDS CLARIFICATION] markers - use only for critical decisions that:
-   - Significantly impact feature scope or user experience
-   - Have multiple reasonable interpretations with different implications
-   - Lack any reasonable default
-4. **Prioritize clarifications**: scope > security/privacy > user experience > technical details
-5. **Think like a tester**: Every vague requirement should fail the "testable and unambiguous" checklist item
-6. **Common areas needing clarification** (only if no reasonable default exists):
-   - Feature scope and boundaries (include/exclude specific use cases)
-   - User types and permissions (if multiple conflicting interpretations possible)
-   - Security/compliance requirements (when legally/financially significant)
+**良い例**:
 
-**Examples of reasonable defaults** (don't ask about these):
+- "ユーザーは3分以内にチェックアウトを完了できる"
+- "システムは10,000の同時ユーザーをサポート"
+- "検索の95%が1秒以内に結果を返す"
+- "タスク完了率が40%向上"
 
-- Data retention: Industry-standard practices for the domain
-- Performance targets: Standard web/mobile app expectations unless specified
-- Error handling: User-friendly messages with appropriate fallbacks
-- Authentication method: Standard session-based or OAuth2 for web apps
-- Integration patterns: Use project-appropriate patterns (REST/GraphQL for web services, function calls for libraries, CLI args for tools, etc.)
+**悪い例**（実装中心）:
 
-### Success Criteria Guidelines
-
-Success criteria must be:
-
-1. **Measurable**: Include specific metrics (time, percentage, count, rate)
-2. **Technology-agnostic**: No mention of frameworks, languages, databases, or tools
-3. **User-focused**: Describe outcomes from user/business perspective, not system internals
-4. **Verifiable**: Can be tested/validated without knowing implementation details
-
-**Good examples**:
-
-- "Users can complete checkout in under 3 minutes"
-- "System supports 10,000 concurrent users"
-- "95% of searches return results in under 1 second"
-- "Task completion rate improves by 40%"
-
-**Bad examples** (implementation-focused):
-
-- "API response time is under 200ms" (too technical, use "Users see results instantly")
-- "Database can handle 1000 TPS" (implementation detail, use user-facing metric)
-- "React components render efficiently" (framework-specific)
-- "Redis cache hit rate above 80%" (technology-specific)
-
-## Done When
-
-- [ ] Specification written to `SPEC_FILE` and validated against quality checklist
-- [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
-- [ ] Completion reported to user with feature directory, spec file path, and checklist results
+- "APIレスポンスタイムが200ms未満"（技術的すぎる、"ユーザーは即座に結果を見る"を使用）
+- "データベースが1000 TPSを処理できる"（実装詳細、ユーザー向け指標を使用）
+- "Reactコンポーネントが効率的にレンダリング"（フレームワーク固有）
+- "Redisキャッシュヒット率が80%以上"（技術固有）

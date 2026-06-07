@@ -1,249 +1,195 @@
 ---
-description: Perform a non-destructive cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation.
+description: タスク生成後にspec.md、plan.md、tasks.md間の非破壊的なクロスアーティファクト整合性と品質分析を実行します。
+handoffs: 
+  - label: speckit.implement
+    agent: speckit.implement
+    prompt: フェーズごとに実装を開始します
 ---
 
-## User Input
+## ユーザー入力
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+続行する前に、ユーザー入力を考慮する**必要があります**（空でない場合）。
 
-## Pre-Execution Checks
+## 目標
 
-**Check for extension hooks (before analysis)**:
-- Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.before_analyze` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+実装前に3つのコアアーティファクト（`spec.md`、`plan.md`、`tasks.md`）間の不整合、重複、曖昧さ、未指定項目を特定します。このコマンドは `/speckit.tasks` が完全な `tasks.md` を正常に生成した後にのみ実行する必要があります。
 
-    **Optional Pre-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+## 動作制約
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+**厳密に読み取り専用**: ファイルを**一切変更しないでください**。構造化された分析レポートを出力します。オプションの修正計画を提供します（フォローアップ編集コマンドを手動で呼び出す前に、ユーザーは明示的に承認する必要があります）。
 
-    **Automatic Pre-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
+**憲章の権威**: プロジェクト憲章（`.specify/memory/constitution.md`）はこの分析スコープ内で**交渉不可**です。憲章の競合は自動的にCRITICALとなり、原則の希薄化、再解釈、または暗黙の無視ではなく、仕様、計画、またはタスクの調整が必要です。原則自体を変更する必要がある場合は、`/speckit.analyze` の外で別途明示的な憲章更新として行う必要があります。
 
-    Wait for the result of the hook command before proceeding to the Goal.
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+## 実行ステップ
 
-## Goal
+### 1. 分析コンテキストを初期化
 
-Identify inconsistencies, duplications, ambiguities, and underspecified items across the three core artifacts (`spec.md`, `plan.md`, `tasks.md`) before implementation. This command MUST run only after `/speckit.tasks` has successfully produced a complete `tasks.md`.
-
-## Operating Constraints
-
-**STRICTLY READ-ONLY**: Do **not** modify any files. Output a structured analysis report. Offer an optional remediation plan (user must explicitly approve before any follow-up editing commands would be invoked manually).
-
-**Constitution Authority**: The project constitution (`.specify/memory/constitution.md`) is **non-negotiable** within this analysis scope. Constitution conflicts are automatically CRITICAL and require adjustment of the spec, plan, or tasks—not dilution, reinterpretation, or silent ignoring of the principle. If a principle itself needs to change, that must occur in a separate, explicit constitution update outside `/speckit.analyze`.
-
-## Execution Steps
-
-### 1. Initialize Analysis Context
-
-Run `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` once from repo root and parse JSON for FEATURE_DIR and AVAILABLE_DOCS. Derive absolute paths:
+リポジトリルートから `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` を1回実行し、JSONをパースしてFEATURE_DIRとAVAILABLE_DOCSを取得。絶対パスを導出:
 
 - SPEC = FEATURE_DIR/spec.md
 - PLAN = FEATURE_DIR/plan.md
 - TASKS = FEATURE_DIR/tasks.md
 
-Abort with an error message if any required file is missing (instruct the user to run missing prerequisite command).
-For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+必要なファイルが欠落している場合はエラーメッセージで中止（ユーザーに欠落している前提条件コマンドを実行するよう指示）。
+引数に "I'm Groot" のようなシングルクォートがある場合、エスケープ構文を使用: 例 'I'\''m Groot'（または可能なら二重引用符: "I'm Groot"）。
 
-### 2. Load Artifacts (Progressive Disclosure)
+### 1.1. スタイルガイドを読み込み
 
-Load only the minimal necessary context from each artifact:
+`.specify/README.md` を読み込んで用語集とスタイルガイドを把握。
+- セクション見出しには規定の絵文字を使用する
+- 用語対応表に従って一貫した日本語表現を使用する
+- 英語維持する特殊文字列（マーカー、ステータス、ファイル名等）は変換しない
 
-**From spec.md:**
+### 2. アーティファクトを読み込み（段階的開示）
 
-- Overview/Context
-- Functional Requirements
-- Success Criteria (measurable outcomes — e.g., performance, security, availability, user success, business impact)
-- User Stories
-- Edge Cases (if present)
+各アーティファクトから最小限必要なコンテキストのみを読み込み:
 
-**From plan.md:**
+**spec.mdから:**
 
-- Architecture/stack choices
-- Data Model references
-- Phases
-- Technical constraints
+- 概要/コンテキスト
+- 機能要件
+- 非機能要件
+- ユーザーストーリー
+- エッジケース（存在する場合）
 
-**From tasks.md:**
+**plan.mdから:**
 
-- Task IDs
-- Descriptions
-- Phase grouping
-- Parallel markers [P]
-- Referenced file paths
+- アーキテクチャ/スタック選択
+- データモデル参照
+- フェーズ
+- 技術的制約
 
-**From constitution:**
+**tasks.mdから:**
 
-- Load `.specify/memory/constitution.md` for principle validation
+- タスクID
+- 説明
+- フェーズグループ
+- 並列マーカー [P]
+- 参照されるファイルパス
 
-### 3. Build Semantic Models
+**憲章から:**
 
-Create internal representations (do not include raw artifacts in output):
+- 原則検証のために `.specify/memory/constitution.md` を読み込み
 
-- **Requirements inventory**: For each Functional Requirement (FR-###) and Success Criterion (SC-###), record a stable key. Use the explicit FR-/SC- identifier as the primary key when present, and optionally also derive an imperative-phrase slug for readability (e.g., "User can upload file" → `user-can-upload-file`). Include only Success Criteria items that require buildable work (e.g., load-testing infrastructure, security audit tooling), and exclude post-launch outcome metrics and business KPIs (e.g., "Reduce support tickets by 50%").
-- **User story/action inventory**: Discrete user actions with acceptance criteria
-- **Task coverage mapping**: Map each task to one or more requirements or stories (inference by keyword / explicit reference patterns like IDs or key phrases)
-- **Constitution rule set**: Extract principle names and MUST/SHOULD normative statements
+### 3. セマンティックモデルを構築
 
-### 4. Detection Passes (Token-Efficient Analysis)
+内部表現を作成（出力に生のアーティファクトを含めない）:
 
-Focus on high-signal findings. Limit to 50 findings total; aggregate remainder in overflow summary.
+- **要件インベントリ**: 安定したキーを持つ各機能+非機能要件（命令形フレーズに基づいてスラッグを導出; 例: "ユーザーはファイルをアップロードできる" → `user-can-upload-file`）
+- **ユーザーストーリー/アクションインベントリ**: 受入基準を持つ個別のユーザーアクション
+- **タスクカバレッジマッピング**: 各タスクを1つ以上の要件またはストーリーにマッピング（キーワードによる推論/IDやキーフレーズなどの明示的な参照パターン）
+- **憲章ルールセット**: 原則名とMUST/SHOULD規範的ステートメントを抽出
 
-#### A. Duplication Detection
+### 4. 検出パス（トークン効率的な分析）
 
-- Identify near-duplicate requirements
-- Mark lower-quality phrasing for consolidation
+高信号の発見に焦点を当てる。合計50件の発見に制限; 残りはオーバーフローサマリーで集約。
 
-#### B. Ambiguity Detection
+#### A. 重複検出
 
-- Flag vague adjectives (fast, scalable, secure, intuitive, robust) lacking measurable criteria
-- Flag unresolved placeholders (TODO, TKTK, ???, `<placeholder>`, etc.)
+- ほぼ重複した要件を特定
+- 統合のために低品質の言い回しをマーク
 
-#### C. Underspecification
+#### B. 曖昧さ検出
 
-- Requirements with verbs but missing object or measurable outcome
-- User stories missing acceptance criteria alignment
-- Tasks referencing files or components not defined in spec/plan
+- 測定可能な基準のない曖昧な形容詞（高速、スケーラブル、セキュア、直感的、堅牢）をフラグ
+- 未解決のプレースホルダー（TODO、TKTK、???、`<placeholder>` など）をフラグ
 
-#### D. Constitution Alignment
+#### C. 未指定
 
-- Any requirement or plan element conflicting with a MUST principle
-- Missing mandated sections or quality gates from constitution
+- 動詞はあるがオブジェクトまたは測定可能な結果が欠落している要件
+- 受入基準の整合性が欠落しているユーザーストーリー
+- spec/planで定義されていないファイルまたはコンポーネントを参照するタスク
 
-#### E. Coverage Gaps
+#### D. 憲章整合性
 
-- Requirements with zero associated tasks
-- Tasks with no mapped requirement/story
-- Success Criteria requiring buildable work (performance, security, availability) not reflected in tasks
+- MUST原則と競合する要件または計画要素
+- 憲章からの必須セクションまたは品質ゲートの欠落
 
-#### F. Inconsistency
+#### E. カバレッジギャップ
 
-- Terminology drift (same concept named differently across files)
-- Data entities referenced in plan but absent in spec (or vice versa)
-- Task ordering contradictions (e.g., integration tasks before foundational setup tasks without dependency note)
-- Conflicting requirements (e.g., one requires Next.js while other specifies Vue)
+- 関連タスクがゼロの要件
+- マッピングされた要件/ストーリーのないタスク
+- タスクに反映されていない非機能要件（例: パフォーマンス、セキュリティ）
 
-### 5. Severity Assignment
+#### F. 不整合
 
-Use this heuristic to prioritize findings:
+- 用語のドリフト（同じ概念がファイル間で異なる名前）
+- planで参照されているがspecにないデータエンティティ（またはその逆）
+- タスク順序の矛盾（例: 依存関係の注記なしに基盤セットアップタスクの前に統合タスク）
+- 競合する要件（例: 一方がNext.jsを要求し、他方がVueを指定）
 
-- **CRITICAL**: Violates constitution MUST, missing core spec artifact, or requirement with zero coverage that blocks baseline functionality
-- **HIGH**: Duplicate or conflicting requirement, ambiguous security/performance attribute, untestable acceptance criterion
-- **MEDIUM**: Terminology drift, missing non-functional task coverage, underspecified edge case
-- **LOW**: Style/wording improvements, minor redundancy not affecting execution order
+### 5. 重大度の割り当て
 
-### 6. Produce Compact Analysis Report
+この発見的手法を使用して発見を優先順位付け:
 
-Output a Markdown report (no file writes) with the following structure:
+- **CRITICAL**: 憲章MUSTに違反、コアspecアーティファクトの欠落、またはベースライン機能をブロックするカバレッジゼロの要件
+- **HIGH**: 重複または競合する要件、曖昧なセキュリティ/パフォーマンス属性、テスト不可能な受入基準
+- **MEDIUM**: 用語のドリフト、非機能タスクカバレッジの欠落、未指定のエッジケース
+- **LOW**: スタイル/言い回しの改善、実行順序に影響しない軽微な冗長性
 
-## Specification Analysis Report
+### 6. コンパクトな分析レポートを作成
 
-| ID | Category | Severity | Location(s) | Summary | Recommendation |
-|----|----------|----------|-------------|---------|----------------|
-| A1 | Duplication | HIGH | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
+以下の構造でMarkdownレポートを出力（ファイル書き込みなし）:
 
-(Add one row per finding; generate stable IDs prefixed by category initial.)
+## 仕様分析レポート
 
-**Coverage Summary Table:**
+| ID | カテゴリ | 重大度 | 場所 | サマリー | 推奨事項 |
+|----|----------|--------|------|----------|----------|
+| A1 | 重複 | HIGH | spec.md:L120-134 | 2つの類似した要件 ... | 言い回しを統合; より明確なバージョンを保持 |
 
-| Requirement Key | Has Task? | Task IDs | Notes |
-|-----------------|-----------|----------|-------|
+（発見ごとに1行追加; カテゴリの頭文字をプレフィックスとした安定したIDを生成。）
 
-**Constitution Alignment Issues:** (if any)
+**カバレッジサマリーテーブル:**
 
-**Unmapped Tasks:** (if any)
+| 要件キー | タスクあり? | タスクID | 注記 |
+|----------|-------------|----------|------|
 
-**Metrics:**
+**憲章整合性の問題:** （ある場合）
 
-- Total Requirements
-- Total Tasks
-- Coverage % (requirements with >=1 task)
-- Ambiguity Count
-- Duplication Count
-- Critical Issues Count
+**マッピングされていないタスク:** （ある場合）
 
-### 7. Provide Next Actions
+**メトリクス:**
 
-At end of report, output a concise Next Actions block:
+- 合計要件数
+- 合計タスク数
+- カバレッジ %（1つ以上のタスクを持つ要件）
+- 曖昧さ数
+- 重複数
+- 重大な問題数
 
-- If CRITICAL issues exist: Recommend resolving before `/speckit.implement`
-- If only LOW/MEDIUM: User may proceed, but provide improvement suggestions
-- Provide explicit command suggestions: e.g., "Run /speckit.specify with refinement", "Run /speckit.plan to adjust architecture", "Manually edit tasks.md to add coverage for 'performance-metrics'"
+### 7. 次のアクションを提供
 
-### 8. Offer Remediation
+レポートの最後に、簡潔な次のアクションブロックを出力:
 
-Ask the user: "Would you like me to suggest concrete remediation edits for the top N issues?" (Do NOT apply them automatically.)
+- CRITICALの問題が存在する場合: `/speckit.implement` の前に解決することを推奨
+- LOW/MEDIUMのみの場合: ユーザーは続行可能だが、改善提案を提供
+- 明示的なコマンド提案を提供: 例: "改良して /speckit.specify を実行"、"アーキテクチャを調整するために /speckit.plan を実行"、"'performance-metrics'のカバレッジを追加するためにtasks.mdを手動編集"
 
-### 9. Check for extension hooks
+### 8. 修正を提案
 
-After reporting, check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.after_analyze` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+ユーザーに質問: "上位N件の問題に対する具体的な修正編集を提案しましょうか？"（自動的には適用しないでください。）
 
-    **Optional Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+## 動作原則
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+### コンテキスト効率
 
-    **Automatic Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+- **最小限の高信号トークン**: 網羅的なドキュメントではなく、アクション可能な発見に焦点
+- **段階的開示**: アーティファクトを段階的に読み込み; すべてのコンテンツを分析にダンプしない
+- **トークン効率的な出力**: 発見テーブルを50行に制限; オーバーフローを要約
+- **決定論的な結果**: 変更なしで再実行すると一貫したIDとカウントが生成される
 
-## Operating Principles
+### 分析ガイドライン
 
-### Context Efficiency
+- ファイルを**決して変更しない**（これは読み取り専用分析）
+- 欠落しているセクションを**決して捏造しない**（欠落している場合は正確に報告）
+- 憲章違反を**優先**（これらは常にCRITICAL）
+- 網羅的なルールより**具体例を使用**（一般的なパターンではなく特定のインスタンスを引用）
+- 問題がゼロの場合は**優雅に報告**（カバレッジ統計を含む成功レポートを出力）
 
-- **Minimal high-signal tokens**: Focus on actionable findings, not exhaustive documentation
-- **Progressive disclosure**: Load artifacts incrementally; don't dump all content into analysis
-- **Token-efficient output**: Limit findings table to 50 rows; summarize overflow
-- **Deterministic results**: Rerunning without changes should produce consistent IDs and counts
-
-### Analysis Guidelines
-
-- **NEVER modify files** (this is read-only analysis)
-- **NEVER hallucinate missing sections** (if absent, report them accurately)
-- **Prioritize constitution violations** (these are always CRITICAL)
-- **Use examples over exhaustive rules** (cite specific instances, not generic patterns)
-- **Report zero issues gracefully** (emit success report with coverage statistics)
-
-## Context
+## コンテキスト
 
 $ARGUMENTS

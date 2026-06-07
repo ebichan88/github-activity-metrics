@@ -1,150 +1,109 @@
 ---
-description: Create or update the project constitution from interactive or provided principle inputs, ensuring all dependent templates stay in sync.
+description: インタラクティブまたは提供された原則入力からプロジェクトコンスティテューション（憲章）を作成または更新し、すべての依存テンプレートが同期していることを確認します。
 handoffs: 
-  - label: Build Specification
+  - label: speckit.specify
     agent: speckit.specify
-    prompt: Implement the feature specification based on the updated constitution. I want to build...
+    prompt: 更新されたコンスティテューション（憲章）に基づいて機能仕様を実装します。私が作りたいのは...
 ---
 
-## User Input
+## ユーザー入力
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+続行する前に、ユーザー入力を考慮する**必要があります**（空でない場合）。
 
-## Pre-Execution Checks
+## 概要
 
-**Check for extension hooks (before constitution update)**:
-- Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.before_constitution` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+あなたはプロジェクトコンスティテューション（憲章）を作成または更新しています。テンプレートは `.specify/templates/constitution-template.md` にあり、生成結果は `.specify/memory/constitution.md` に出力されます。テンプレートは角括弧内のプレースホルダートークンを含みます（例: `[PROJECT_NAME]`、`[PRINCIPLE_1_NAME]`）。あなたの仕事は (a) 具体的な値を収集/導出し、(b) テンプレートを正確に埋め、(c) 依存アーティファクト全体に修正を伝播することです。
 
-    **Optional Pre-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+この実行フローに従ってください:
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+1. `.specify/templates/constitution-template.md` のテンプレートを読み込む。
+   - `[ALL_CAPS_IDENTIFIER]` 形式のすべてのプレースホルダートークンを特定。
+   **重要**: ユーザーはテンプレートで使用されているものより少ないまたは多い原則を必要とする場合があります。数が指定された場合、それを尊重 - 一般的なテンプレートに従ってください。それに応じてドキュメントを更新します。
 
-    **Automatic Pre-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
+1.1. **スタイルガイドを読み込み**: `.specify/README.md` を読み込んで用語集とスタイルガイドを把握。
+   - セクション見出しには規定の絵文字を使用する
+   - 用語対応表に従って一貫した日本語表現を使用する
+   - 英語維持する特殊文字列（マーカー、ステータス、ファイル名等）は変換しない
 
-    Wait for the result of the hook command before proceeding to the Outline.
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+1.2. `.specify/memory/constitution.md` が既に存在する場合、既存のバージョン情報を読み取る。
+   - `CONSTITUTION_VERSION`、`RATIFICATION_DATE`、`LAST_AMENDED_DATE` を抽出し、バージョン継承の基準とする。
+   - 存在しない場合は初回生成として扱い、バージョンは `1.0.0` から開始。
 
-## Outline
+2. プレースホルダーの値を収集/導出:
+   - ユーザー入力（会話）が値を提供する場合、それを使用。
+   - それ以外の場合は既存のリポジトリコンテキスト（README、ドキュメント、既存の `.specify/memory/constitution.md`）から推測。
+   - ガバナンス日付について: `RATIFICATION_DATE` は元の採用日（初回生成時は今日、不明な場合は質問するかTODOをマーク）、`LAST_AMENDED_DATE` は変更が行われた場合は今日、そうでなければ以前のものを維持。
+   - `CONSTITUTION_VERSION` はセマンティックバージョニングルールに従ってインクリメントする必要がある:
+     - MAJOR: 後方互換性のないガバナンス/原則の削除または再定義。
+     - MINOR: 新しい原則/セクションの追加または実質的に拡張されたガイダンス。
+     - PATCH: 明確化、言い回し、タイポ修正、非セマンティックな改良。
+   - バージョンバンプタイプが曖昧な場合、最終決定前に理由を提案。
 
-You are updating the project constitution at `.specify/memory/constitution.md`. This file is a TEMPLATE containing placeholder tokens in square brackets (e.g. `[PROJECT_NAME]`, `[PRINCIPLE_1_NAME]`). Your job is to (a) collect/derive concrete values, (b) fill the template precisely, and (c) propagate any amendments across dependent artifacts.
+3. 更新されたコンスティテューション（憲章）コンテンツのドラフトを作成:
+   - すべてのプレースホルダーを具体的なテキストに置き換える（プロジェクトがまだ定義しないことを選択した意図的に保持されたテンプレートスロットを除き、角括弧のトークンは残さない—残った場合は明示的に正当化）。
+   - `[TOC]` プレースホルダーを実際の目次に置き換える。目次はセクション構成に基づいて動的に生成:
+     - コアプリンシプルと各原則のサブセクションをリスト
+     - 追加セクション（SECTION_2, SECTION_3等）をリスト
+     - ガバナンスセクションをリスト
+     - Markdownアンカーリンク形式を使用（例: `- [コアプリンシプル](#-コアプリンシプル)`）
+     - 目次の表示テキストには絵文字を含めない（見出しには絵文字があるが、目次リンクのテキストからは除く）
+     - 絵文字付き見出しのアンカーは絵文字を除いた形式で生成（例: `## 🎯 コアプリンシプル` → `#-コアプリンシプル`）
+   - `[EMOJI_N]` プレースホルダー（可変セクション用）を、セクション内容に適した絵文字に置き換える:
+     - 技術スタック → 🛠️
+     - セキュリティ → 🔐
+     - パフォーマンス → ⚡
+     - 開発ワークフロー → 📝
+     - レビュープロセス → 👀
+     - 品質ゲート → ✅
+     - 命名規則 → 📛
+     - その他 → セクション内容に最も適した絵文字を選択
+   - 見出し階層を保持し、コメントは明確なガイダンスを追加しない限り置き換えたら削除可能。
+   - 各原則セクションを確保: 簡潔な名前行、交渉不可のルールをキャプチャする段落（または箇条書きリスト）、明らかでない場合は明示的な根拠。
+   - ガバナンスセクションが修正手続き、バージョニングポリシー、コンプライアンスレビュー期待をリストしていることを確認。
 
-**Note**: If `.specify/memory/constitution.md` does not exist yet, it should have been initialized from `.specify/templates/constitution-template.md` during project setup. If it's missing, copy the template first.
+4. 一貫性伝播チェックリスト（以前のチェックリストをアクティブな検証に変換）:
+   - `.specify/templates/plan-template.md` を読み込み、"Constitution Check"またはルールが更新された原則と整合していることを確認。
+   - `.specify/templates/spec-template.md` をスコープ/要件の整合のために読み込む—コンスティテューション（憲章）が必須セクションまたは制約を追加/削除した場合は更新。
+   - `.specify/templates/tasks-template.md` を読み込み、タスク分類が新しいまたは削除された原則駆動のタスクタイプ（例: オブザーバビリティ、バージョニング、テスト規律）を反映していることを確認。
+   - `.specify/templates/commands/*.md` の各コマンドファイル（これを含む）を読み込み、一般的なガイダンスが必要な場合に古い参照（CLAUDEのようなエージェント固有の名前のみ）が残っていないことを確認。
+   - ランタイムガイダンスドキュメント（例: `README.md`、`docs/quickstart.md`、または存在する場合はエージェント固有のガイダンスファイル）を読み込む。変更された原則への参照を更新。
 
-Follow this execution flow:
+5. 同期影響レポートを作成（更新後にコンスティテューション（憲章）ファイルの上部にHTMLコメントとして前置き）:
+   - バージョン変更: 旧 → 新
+   - 変更された原則のリスト（名前が変更された場合は旧タイトル → 新タイトル）
+   - 追加されたセクション
+   - 削除されたセクション
+   - 更新が必要なテンプレート（✅ 更新済み / ⚠ 保留中）とファイルパス
+   - プレースホルダーが意図的に延期された場合のフォローアップTODO。
 
-1. Load the existing constitution at `.specify/memory/constitution.md`.
-   - Identify every placeholder token of the form `[ALL_CAPS_IDENTIFIER]`.
-   **IMPORTANT**: The user might require less or more principles than the ones used in the template. If a number is specified, respect that - follow the general template. You will update the doc accordingly.
+6. 最終出力前の検証:
+   - 説明のない角括弧トークンが残っていない。
+   - バージョン行がレポートと一致。
+   - 日付はISO形式YYYY-MM-DD。
+   - 原則は宣言的、テスト可能で、曖昧な言語がない（"should" → 適切な場合はMUST/SHOULDの根拠に置き換え）。
+   - 目次が実際のセクション構成と一致していることを確認（リンク先が正しい見出しを指している）。
 
-2. Collect/derive values for placeholders:
-   - If user input (conversation) supplies a value, use it.
-   - Otherwise infer from existing repo context (README, docs, prior constitution versions if embedded).
-   - For governance dates: `RATIFICATION_DATE` is the original adoption date (if unknown ask or mark TODO), `LAST_AMENDED_DATE` is today if changes are made, otherwise keep previous.
-   - `CONSTITUTION_VERSION` must increment according to semantic versioning rules:
-     - MAJOR: Backward incompatible governance/principle removals or redefinitions.
-     - MINOR: New principle/section added or materially expanded guidance.
-     - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
-   - If version bump type ambiguous, propose reasoning before finalizing.
+7. 完成したコンスティテューション（憲章）を `.specify/memory/constitution.md` に書き出す（新規作成または上書き）。
+   - テンプレート（`.specify/templates/constitution-template.md`）は変更しない。
 
-3. Draft the updated constitution content:
-   - Replace every placeholder with concrete text (no bracketed tokens left except intentionally retained template slots that the project has chosen not to define yet—explicitly justify any left).
-   - Preserve heading hierarchy and comments can be removed once replaced unless they still add clarifying guidance.
-   - Ensure each Principle section: succinct name line, paragraph (or bullet list) capturing non‑negotiable rules, explicit rationale if not obvious.
-   - Ensure Governance section lists amendment procedure, versioning policy, and compliance review expectations.
+8. 以下を含む最終サマリーをユーザーに出力:
+   - 新しいバージョンとバンプの根拠。
+   - 手動フォローアップのためにフラグが立てられたファイル。
+   - 推奨コミットメッセージ（例: `docs: amend constitution to vX.Y.Z (principle additions + governance update)`）。
 
-4. Consistency propagation checklist (convert prior checklist into active validations):
-   - Read `.specify/templates/plan-template.md` and ensure any "Constitution Check" or rules align with updated principles.
-   - Read `.specify/templates/spec-template.md` for scope/requirements alignment—update if constitution adds/removes mandatory sections or constraints.
-   - Read `.specify/templates/tasks-template.md` and ensure task categorization reflects new or removed principle-driven task types (e.g., observability, versioning, testing discipline).
-   - Read each command file in `.specify/templates/commands/*.md` (including this one) to verify no outdated references (agent-specific names like CLAUDE only) remain when generic guidance is required.
-   - Read any runtime guidance docs (e.g., `README.md`, `docs/quickstart.md`, or agent-specific guidance files if present). Update references to principles changed.
+フォーマットとスタイル要件:
 
-5. Produce a Sync Impact Report (prepend as an HTML comment at top of the constitution file after update):
-   - Version change: old → new
-   - List of modified principles (old title → new title if renamed)
-   - Added sections
-   - Removed sections
-   - Templates requiring updates (✅ updated / ⚠ pending) with file paths
-   - Follow-up TODOs if any placeholders intentionally deferred.
+- テンプレートと完全に同じMarkdown見出しを使用（レベルを降格/昇格しない）。
+- 長い根拠行は可読性を保つために折り返す（理想的には100文字未満）が、不自然な改行で強制しない。
+- セクション間に1つの空白行を保持。
+- 末尾の空白を避ける。
 
-6. Validation before final output:
-   - No remaining unexplained bracket tokens.
-   - Version line matches report.
-   - Dates ISO format YYYY-MM-DD.
-   - Principles are declarative, testable, and free of vague language ("should" → replace with MUST/SHOULD rationale where appropriate).
+ユーザーが部分的な更新を提供した場合（例: 1つの原則の修正のみ）でも、検証とバージョン決定ステップを実行。
 
-7. Write the completed constitution back to `.specify/memory/constitution.md` (overwrite).
+重要な情報が欠落している場合（例: 批准日が本当に不明）、`TODO(<FIELD_NAME>): 説明` を挿入し、同期影響レポートの延期項目に含める。
 
-8. Output a final summary to the user with:
-   - New version and bump rationale.
-   - Any files flagged for manual follow-up.
-   - Suggested commit message (e.g., `docs: amend constitution to vX.Y.Z (principle additions + governance update)`).
-
-Formatting & Style Requirements:
-
-- Use Markdown headings exactly as in the template (do not demote/promote levels).
-- Wrap long rationale lines to keep readability (<100 chars ideally) but do not hard enforce with awkward breaks.
-- Keep a single blank line between sections.
-- Avoid trailing whitespace.
-
-If the user supplies partial updates (e.g., only one principle revision), still perform validation and version decision steps.
-
-If critical info missing (e.g., ratification date truly unknown), insert `TODO(<FIELD_NAME>): explanation` and include in the Sync Impact Report under deferred items.
-
-Do not create a new template; always operate on the existing `.specify/memory/constitution.md` file.
-
-## Post-Execution Checks
-
-**Check for extension hooks (after constitution update)**:
-Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.after_constitution` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
-
-    **Optional Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
-
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
-
-    **Automatic Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+テンプレート（`.specify/templates/constitution-template.md`）は変更しない; 常に `.specify/memory/constitution.md` を操作（新規作成または上書き）。
