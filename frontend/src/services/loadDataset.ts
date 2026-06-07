@@ -3,9 +3,9 @@ import type { Dataset } from '../types/dataset.js';
 export class DatasetLoadError extends Error {
     constructor(
         message: string,
-        public readonly cause?: unknown
+        cause?: unknown
     ) {
-        super(message);
+        super(message, { cause });
         this.name = 'DatasetLoadError';
     }
 }
