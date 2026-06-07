@@ -1,0 +1,91 @@
+{
+    "datasetVersion": "1.0.0",
+    "generatedAt": "2026-06-01T00:00:00Z",
+    "sourceType": "personal",
+    "period": {
+        "from": "2026-05-01",
+        "to": "2026-05-31"
+    },
+    "repositories": [
+        {
+            "owner": "example",
+            "name": "repo-a",
+            "visibility": "public"
+        },
+        {
+            "owner": "example",
+            "name": "repo-b",
+            "visibility": "private"
+        }
+    ],
+    "contributors": [
+        {
+            "login": "user1",
+            "prs": {
+                "createdCount": 5,
+                "closedCount": 1,
+                "mergedCount": 4,
+                "relatedIssues": [
+                    {
+                        "prNumber": 42,
+                        "repository": "example/repo-a",
+                        "issueRef": "#10",
+                        "keyword": "Fixes"
+                    },
+                    {
+                        "prNumber": 45,
+                        "repository": "example/repo-a",
+                        "issueRef": "#15",
+                        "keyword": "Closes"
+                    }
+                ]
+            },
+            "commits": {
+                "commitCount": 20,
+                "additions": 350,
+                "deletions": 120
+            },
+            "reviews": {
+                "reviewedPrCount": 8,
+                "reviewCommentCount": 15
+            },
+            "derived": {
+                "reviewRate": 1.6,
+                "averagePrSize": 94.0,
+                "averageReviewComments": 1.875,
+                "mergeRate": 0.8
+            }
+        },
+        {
+            "login": "user2",
+            "prs": {
+                "createdCount": 0,
+                "closedCount": 0,
+                "mergedCount": 0,
+                "relatedIssues": []
+            },
+            "commits": {
+                "commitCount": 3,
+                "additions": 50,
+                "deletions": 10
+            },
+            "reviews": {
+                "reviewedPrCount": 2,
+                "reviewCommentCount": 4
+            },
+            "derived": {
+                "reviewRate": null,
+                "averagePrSize": null,
+                "averageReviewComments": 2.0,
+                "mergeRate": null
+            }
+        }
+    ],
+    "warnings": [
+        {
+            "code": "PARTIAL_DATA",
+            "message": "example/repo-b のデータ取得が部分的にしか完了しませんでした",
+            "repository": "example/repo-b"
+        }
+    ]
+}

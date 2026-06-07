@@ -20,26 +20,26 @@
 
 **目的**: モノレポ基盤と開発設定を用意する
 
-- [ ] T001 ルートのワークスペース設定を `pnpm-workspace.yaml` に作成
-- [ ] T002 ルートスクリプトと共通依存を `package.json` に定義
-- [ ] T003 [P] 収集ツールの初期設定を `collector/package.json` に作成
-- [ ] T004 [P] フロントエンド初期設定を `frontend/package.json` に作成
-- [ ] T005 [P] TypeScript共通設定を `tsconfig.base.json` に作成
-- [ ] T006 [P] Lint/Format設定を `.eslintrc.cjs` に作成
+- [x] T001 ルートのワークスペース設定を `pnpm-workspace.yaml` に作成
+- [x] T002 ルートスクリプトと共通依存を `package.json` に定義
+- [x] T003 [P] 収集ツールの初期設定を `collector/package.json` に作成
+- [x] T004 [P] フロントエンド初期設定を `frontend/package.json` に作成
+- [x] T005 [P] TypeScript共通設定を `tsconfig.base.json` に作成
+- [x] T006 [P] Lint/Format設定を `.eslintrc.cjs` に作成
 
 ### Phase 2: Foundational（全ストーリー共通の前提）
 
 **目的**: US着手前に必要な基盤（取得境界・JSON仕様・テスト基盤）を整備する
 
-- [ ] T007 GitHub CLI実行境界を `collector/src/github/client.ts` に実装
-- [ ] T008 [P] GraphQLクエリ定義を `collector/src/github/queries.ts` に実装
-- [ ] T009 [P] データセットスキーマ検証を `collector/src/domain/schema.ts` に実装
-- [ ] T010 Local First保存APIを `collector/src/output/datasetStore.ts` に実装
-- [ ] T011 [P] 非致命エラー通知モデルを `collector/src/domain/warning.ts` に実装
-- [ ] T012 JSON仕様の整合確認を `specs/001-github-activity-dashboard/dataset-schema.json` で更新
-- [ ] T013 サンプルデータを `samples/activity-dataset.sample.json` に作成
-- [ ] T014 [P] Collectorのテスト設定を `collector/vitest.config.ts` に作成
-- [ ] T015 [P] Frontendのテスト設定を `frontend/vitest.config.ts` に作成
+- [x] T007 GitHub CLI実行境界を `collector/src/github/client.ts` に実装
+- [x] T008 [P] GraphQLクエリ定義を `collector/src/github/queries.ts` に実装
+- [x] T009 [P] データセットスキーマ検証を `collector/src/domain/schema.ts` に実装
+- [x] T010 Local First保存APIを `collector/src/output/datasetStore.ts` に実装
+- [x] T011 [P] 非致命エラー通知モデルを `collector/src/domain/warning.ts` に実装
+- [x] T012 JSON仕様の整合確認を `specs/001-github-activity-dashboard/dataset-schema.json` で更新
+- [x] T013 サンプルデータを `samples/activity-dataset.sample.json` に作成
+- [x] T014 [P] Collectorのテスト設定を `collector/vitest.config.ts` に作成
+- [x] T015 [P] Frontendのテスト設定を `frontend/vitest.config.ts` に作成
 
 **Checkpoint**: ここまで完了後に各ユーザーストーリーへ着手可能
 
@@ -51,21 +51,21 @@
 
 #### Tests（US1）
 
-- [ ] T016 [P] [US1] 集計コアのユニットテストを `collector/tests/unit/aggregate.test.ts` に実装
-- [ ] T017 [P] [US1] PR本文からIssue参照抽出のユニットテストを `collector/tests/unit/extractRelatedIssues.test.ts` に実装
-- [ ] T018 [P] [US1] 収集スクリプトのJSON出力統合テストを `collector/tests/integration/exportJson.integration.test.ts` に実装
-- [ ] T019 [P] [US1] 収集CLI統合テストを `collector/tests/integration/collect.integration.test.ts` に実装
+- [x] T016 [P] [US1] 集計コアのユニットテストを `collector/tests/unit/aggregate.test.ts` に実装
+- [x] T017 [P] [US1] PR本文からIssue参照抽出のユニットテストを `collector/tests/unit/extractRelatedIssues.test.ts` に実装
+- [x] T018 [P] [US1] 収集スクリプトのJSON出力統合テストを `collector/tests/integration/exportJson.integration.test.ts` に実装
+- [x] T019 [P] [US1] 収集CLI統合テストを `collector/tests/integration/collect.integration.test.ts` に実装
 
 #### Implementation（US1）
 
-- [ ] T020 [P] [US1] Issue参照抽出ロジックを `collector/src/domain/extractRelatedIssues.ts` に実装
-- [ ] T021 [P] [US1] 基本集計ロジックを `collector/src/domain/aggregate.ts` に実装
-- [ ] T022 [US1] 収集ユースケースを `collector/src/domain/collectActivity.ts` に実装
-- [ ] T023 [US1] 収集CLIエントリを `collector/src/cli/collect.ts` に実装
-- [ ] T024 [US1] 収集入力バリデータを `collector/src/domain/collectRequest.ts` に実装
-- [ ] T025 [US1] ダッシュボード表示用変換を `frontend/src/services/toDashboardViewModel.ts` に実装
-- [ ] T026 [US1] 主要KPI表示コンポーネントを `frontend/src/components/KpiCards.vue` に実装
-- [ ] T027 [US1] 担当者別実績テーブルを `frontend/src/components/ContributorTable.vue` に実装
+- [x] T020 [P] [US1] Issue参照抽出ロジックを `collector/src/domain/extractRelatedIssues.ts` に実装
+- [x] T021 [P] [US1] 基本集計ロジックを `collector/src/domain/aggregate.ts` に実装
+- [x] T022 [US1] 収集ユースケースを `collector/src/domain/collectActivity.ts` に実装
+- [x] T023 [US1] 収集CLIエントリを `collector/src/cli/collect.ts` に実装
+- [x] T024 [US1] 収集入力バリデータを `collector/src/domain/collectRequest.ts` に実装
+- [x] T025 [US1] ダッシュボード表示用変換を `frontend/src/services/toDashboardViewModel.ts` に実装
+- [x] T026 [US1] 主要KPI表示コンポーネントを `frontend/src/components/KpiCards.vue` に実装
+- [x] T027 [US1] 担当者別実績テーブルを `frontend/src/components/ContributorTable.vue` に実装
 
 **Checkpoint**: US1単体で主要価値（定量集計）が提供可能
 
@@ -77,17 +77,17 @@
 
 #### Tests（US2）
 
-- [ ] T028 [P] [US2] JSONスキーマ検証テストを `collector/tests/unit/datasetSchema.test.ts` に実装
-- [ ] T029 [P] [US2] オフライン読込統合テストを `frontend/tests/unit/loadDataset.offline.test.ts` に実装
-- [ ] T030 [P] [US2] データセット互換性ユニットテストを `collector/tests/unit/datasetVersion.test.ts` に実装
+- [x] T028 [P] [US2] JSONスキーマ検証テストを `collector/tests/unit/datasetSchema.test.ts` に実装
+- [x] T029 [P] [US2] オフライン読込統合テストを `frontend/tests/unit/loadDataset.offline.test.ts` に実装
+- [x] T030 [P] [US2] データセット互換性ユニットテストを `collector/tests/unit/datasetVersion.test.ts` に実装
 
 #### Implementation（US2）
 
-- [ ] T031 [P] [US2] バージョン検証付き読込ロジックを `collector/src/output/readDataset.ts` に実装
-- [ ] T032 [US2] JSON読込サービスを `frontend/src/services/loadDataset.ts` に実装
-- [ ] T033 [US2] ファイル読込フローを `frontend/src/composables/useDatasetLoader.ts` に実装
-- [ ] T034 [US2] 復旧可能なエラー表示を `frontend/src/components/ErrorStateBanner.vue` に実装
-- [ ] T035 [US2] 読込導線付きページを `frontend/src/pages/DashboardPage.vue` に実装
+- [x] T031 [P] [US2] バージョン検証付き読込ロジックを `collector/src/output/readDataset.ts` に実装
+- [x] T032 [US2] JSON読込サービスを `frontend/src/services/loadDataset.ts` に実装
+- [x] T033 [US2] ファイル読込フローを `frontend/src/composables/useDatasetLoader.ts` に実装
+- [x] T034 [US2] 復旧可能なエラー表示を `frontend/src/components/ErrorStateBanner.vue` に実装
+- [x] T035 [US2] 読込導線付きページを `frontend/src/pages/DashboardPage.vue` に実装
 
 **Checkpoint**: US2単体でLocal First要件を満たす
 
@@ -99,15 +99,15 @@
 
 #### Tests（US3）
 
-- [ ] T036 [P] [US3] 派生指標計算ユニットテストを `collector/tests/unit/metrics.test.ts` に実装
-- [ ] T037 [P] [US3] 比較表示統合テストを `frontend/tests/unit/contributorComparison.test.ts` に実装
+- [x] T036 [P] [US3] 派生指標計算ユニットテストを `collector/tests/unit/metrics.test.ts` に実装
+- [x] T037 [P] [US3] 比較表示統合テストを `frontend/tests/unit/contributorComparison.test.ts` に実装
 
 #### Implementation（US3）
 
-- [ ] T038 [P] [US3] 派生指標計算モジュールを `collector/src/domain/metrics.ts` に実装
-- [ ] T039 [US3] 比較フィルタロジックを `frontend/src/composables/useContributorFilters.ts` に実装
-- [ ] T040 [US3] 派生指標パネルを `frontend/src/components/DerivedMetricsPanel.vue` に実装
-- [ ] T041 [US3] 担当者ランキングテーブルを `frontend/src/components/ContributorRankingTable.vue` に実装
+- [x] T038 [P] [US3] 派生指標計算モジュールを `collector/src/domain/metrics.ts` に実装
+- [x] T039 [US3] 比較フィルタロジックを `frontend/src/composables/useContributorFilters.ts` に実装
+- [x] T040 [US3] 派生指標パネルを `frontend/src/components/DerivedMetricsPanel.vue` に実装
+- [x] T041 [US3] 担当者ランキングテーブルを `frontend/src/components/ContributorRankingTable.vue` に実装
 
 **Checkpoint**: US3単体で分析・比較ユースケースを満たす
 
@@ -115,14 +115,14 @@
 
 **目的**: 横断品質向上と配備準備
 
-- [ ] T042 [P] 手動テスト観点を `specs/001-github-activity-dashboard/checklists/manual-test.md` に作成
-- [ ] T043 Quickstart手順を `specs/001-github-activity-dashboard/quickstart.md` に更新
-- [ ] T044 GitHub Pagesデプロイ設定を `.github/workflows/deploy-pages.yml` に実装
-- [ ] T045 ViteのPages base設定を `frontend/vite.config.ts` に実装
-- [ ] T046 収集パフォーマンス計測ログ出力を `collector/src/cli/collect.ts` に追加
-- [ ] T047 [P] ログイン導線非提供のガードテストを `frontend/tests/unit/noLoginFlow.test.ts` に実装
-- [ ] T048 [P] 評価資料準備時間のベースライン計測手順を `specs/001-github-activity-dashboard/checklists/reporting-time-benchmark.md` に作成
-- [ ] T049 [P] SC-004判定用の計測スクリプトを `scripts/measure-report-prep-time.sh` に作成
+- [x] T042 [P] 手動テスト観点を `specs/001-github-activity-dashboard/checklists/manual-test.md` に作成
+- [x] T043 Quickstart手順を `specs/001-github-activity-dashboard/quickstart.md` に更新
+- [x] T044 GitHub Pagesデプロイ設定を `.github/workflows/deploy-pages.yml` に実装
+- [x] T045 ViteのPages base設定を `frontend/vite.config.ts` に実装
+- [x] T046 収集パフォーマンス計測ログ出力を `collector/src/cli/collect.ts` に追加
+- [x] T047 [P] ログイン導線非提供のガードテストを `frontend/tests/unit/noLoginFlow.test.ts` に実装
+- [x] T048 [P] 評価資料準備時間のベースライン計測手順を `specs/001-github-activity-dashboard/checklists/reporting-time-benchmark.md` に作成
+- [x] T049 [P] SC-004判定用の計測スクリプトを `scripts/measure-report-prep-time.sh` に作成
 
 ## Dependencies & Execution Order
 

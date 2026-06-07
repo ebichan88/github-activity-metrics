@@ -48,15 +48,32 @@
 
 ## 4. GitHub Pages 配備
 
-1. ビルド
+1. ビルド（GitHub Pages 用ベースパスを指定）
 
-   pnpm frontend:build
+   GITHUB_PAGES=true pnpm frontend:build
 
-2. Pages設定に合わせて成果物を deploy
+2. `.github/workflows/deploy-pages.yml` を有効化し、`main` ブランチへプッシュ
+   → GitHub Actions が自動的にビルド＆デプロイします
 
-3. 公開ページでJSON読み込み表示を確認
+3. リポジトリ設定 > Pages > Source を「GitHub Actions」に変更
 
-## 5. 手動確認チェックリスト
+4. 公開ページでJSON読み込み表示を確認
+
+## 5. 評価資料準備時間の計測（SC-004）
+
+```bash
+# 作業開始時
+./scripts/measure-report-prep-time.sh start
+
+# ... 評価資料作成作業 ...
+
+# 作業完了時（所要時間が表示される）
+./scripts/measure-report-prep-time.sh stop
+```
+
+詳細は `specs/001-github-activity-dashboard/checklists/reporting-time-benchmark.md` を参照。
+
+## 6. 手動確認チェックリスト
 
 - gh CLI未ログイン時に収集スクリプトが終了し、案内メッセージが出る
 - 期間内データ0件でもエラーにならず0件表示される

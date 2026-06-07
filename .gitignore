@@ -1,0 +1,36 @@
+# 依存パッケージ
+node_modules/
+
+# ビルド成果物
+dist/
+build/
+
+# TypeScriptビルドキャッシュ
+*.tsbuildinfo
+
+# 環境変数（機密情報）
+.env
+.env.*
+!.env.example
+
+# ログ
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
+
+# エディタ設定
+.vscode/
+.idea/
+*.suo
+*.user
+
+# 収集データ（サンプル以外）
+data/
+!samples/
+
+# pnpm
+.pnpm-store/
