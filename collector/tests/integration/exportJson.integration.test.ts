@@ -3,12 +3,10 @@
  * gh CLI が利用できる環境でのみ実行する
  * CI では SKIP_INTEGRATION=true を設定して除外可能
  */
-import { existsSync, readFileSync, rmSync } from 'node:fs';
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DatasetSchema } from '../../src/domain/schema.js';
 import { writeDataset } from '../../src/output/datasetStore.js';

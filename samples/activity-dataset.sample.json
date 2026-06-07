@@ -45,9 +45,19 @@
                 "mergeRate": 1.0
             },
             "prDetails": {
-                "createdPrNumbers": [42, 45],
-                "mergedPrNumbers": [42, 45],
-                "reviewedPrNumbers": [40, 41, 44]
+                "createdPrNumbers": [
+                    42,
+                    45
+                ],
+                "mergedPrNumbers": [
+                    42,
+                    45
+                ],
+                "reviewedPrNumbers": [
+                    40,
+                    41,
+                    44
+                ]
             }
         },
         {
@@ -76,7 +86,9 @@
             "prDetails": {
                 "createdPrNumbers": [],
                 "mergedPrNumbers": [],
-                "reviewedPrNumbers": [45]
+                "reviewedPrNumbers": [
+                    45
+                ]
             }
         }
     ],
@@ -92,14 +104,20 @@
                 "doneCount": 3,
                 "estimateTotal": 8,
                 "estimateMissingCount": 1,
-                "doneIssueNumbers": [10, 11, 12]
+                "doneIssueNumbers": [
+                    10,
+                    11,
+                    12
+                ]
             },
             {
                 "login": "user2",
                 "doneCount": 1,
                 "estimateTotal": 2,
                 "estimateMissingCount": 0,
-                "doneIssueNumbers": [14]
+                "doneIssueNumbers": [
+                    14
+                ]
             }
         ],
         "unassigned": {
@@ -107,7 +125,9 @@
             "doneCount": 1,
             "estimateTotal": 0,
             "estimateMissingCount": 1,
-            "doneIssueNumbers": [15]
+            "doneIssueNumbers": [
+                15
+            ]
         }
     },
     "warnings": []
