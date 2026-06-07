@@ -15,3 +15,9 @@
 - 特殊マーカー（`[P]`, `[US1]`, `NEEDS CLARIFICATION` 等）は英語のまま維持してください
 - ファイル名やパスは英語のまま維持してください
 - 技術用語（言語名、フレームワーク名等）は英語のまま維持してください
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+at /home/takashi-ebina/github-activity-metrics/specs/001-github-activity-dashboard/plan.md
+<!-- SPECKIT END -->

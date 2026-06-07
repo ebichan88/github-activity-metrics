@@ -1,0 +1,216 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github-activity-metrics.local/schemas/dataset-schema.json",
+    "title": "GitHub Activity Dataset",
+    "type": "object",
+    "required": [
+        "datasetVersion",
+        "generatedAt",
+        "period",
+        "repositories",
+        "contributors"
+    ],
+    "properties": {
+        "datasetVersion": {
+            "type": "string"
+        },
+        "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "sourceType": {
+            "type": "string",
+            "enum": [
+                "enterprise-cloud",
+                "personal"
+            ]
+        },
+        "period": {
+            "type": "object",
+            "required": [
+                "from",
+                "to"
+            ],
+            "properties": {
+                "from": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "to": {
+                    "type": "string",
+                    "format": "date"
+                }
+            }
+        },
+        "repositories": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "contributors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "login",
+                    "prs",
+                    "commits",
+                    "reviews",
+                    "derived"
+                ],
+                "properties": {
+                    "login": {
+                        "type": "string"
+                    },
+                    "prs": {
+                        "type": "object",
+                        "required": [
+                            "createdCount",
+                            "closedCount",
+                            "mergedCount",
+                            "relatedIssues"
+                        ],
+                        "properties": {
+                            "createdCount": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "closedCount": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "mergedCount": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "relatedIssues": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "prNumber",
+                                        "repository",
+                                        "issueRef"
+                                    ],
+                                    "properties": {
+                                        "prNumber": {
+                                            "type": "integer"
+                                        },
+                                        "repository": {
+                                            "type": "string"
+                                        },
+                                        "issueRef": {
+                                            "type": "string"
+                                        },
+                                        "keyword": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "commits": {
+                        "type": "object",
+                        "required": [
+                            "commitCount",
+                            "additions",
+                            "deletions"
+                        ],
+                        "properties": {
+                            "commitCount": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "additions": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "deletions": {
+                                "type": "integer",
+                                "minimum": 0
+                            }
+                        }
+                    },
+                    "reviews": {
+                        "type": "object",
+                        "required": [
+                            "reviewedPrCount",
+                            "reviewCommentCount"
+                        ],
+                        "properties": {
+                            "reviewedPrCount": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "reviewCommentCount": {
+                                "type": "integer",
+                                "minimum": 0
+                            }
+                        }
+                    },
+                    "derived": {
+                        "type": "object",
+                        "required": [
+                            "reviewRate",
+                            "averagePrSize",
+                            "averageReviewComments",
+                            "mergeRate"
+                        ],
+                        "properties": {
+                            "reviewRate": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "averagePrSize": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "averageReviewComments": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "mergeRate": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "warnings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "message"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "repository": {
+                        "type": "string"
+                    },
+                    "contributor": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
