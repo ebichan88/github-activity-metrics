@@ -43,6 +43,19 @@ describe('datasetVersion 互換性', () => {
         }
     });
 
+    it('バージョン 1.1.0 のファイルを正常に読み込める', () => {
+        const path = tmpPath();
+        try {
+            const next = { ...minimalDataset, datasetVersion: '1.1.0' as const };
+            writeFileSync(path, JSON.stringify(next), 'utf-8');
+
+            const loaded = readDataset(path);
+            expect(loaded.datasetVersion).toBe('1.1.0');
+        } finally {
+            if (existsSync(path)) rmSync(path);
+        }
+    });
+
     it('不正な JSON で DatasetParseError が投げられる', () => {
         const path = tmpPath();
         try {

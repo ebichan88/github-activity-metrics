@@ -14,6 +14,11 @@ function makeRow(login: string, prCreated: number = 3): ContributorRow {
         reviewedPrs: 2,
         reviewRate: '66.7%',
         relatedIssueCount: 1,
+        prDetails: {
+            createdPrNumbers: [],
+            mergedPrNumbers: [],
+            reviewedPrNumbers: [],
+        },
     };
 }
 

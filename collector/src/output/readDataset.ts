@@ -16,7 +16,7 @@ export class DatasetParseError extends Error {
 }
 
 /** サポートする datasetVersion の一覧 */
-const SUPPORTED_VERSIONS = ['1.0.0'];
+const SUPPORTED_VERSIONS = ['1.0.0', '1.1.0'];
 
 /**
  * JSON ファイルを読み込んで Dataset に変換する

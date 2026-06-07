@@ -42,13 +42,25 @@ gh auth login
   --out ./data/activity-2026-05.json
 ```
 
+Issue 実績（GitHub Project）の収集:
+
+```bash
+./scripts/export-activity-json.sh \
+  --from 2026-05-01 --to 2026-05-31 \
+  --repos org/repo-a \
+  --contributors user1,user2 \
+  --project-owner your-org \
+  --project-number 12 \
+  --out ./data/activity-issue-2026-05.json
+```
+
 引数なしで実行すると Usage を表示します。
 
 ```bash
 ./scripts/export-activity-json.sh
 ```
 
-出力ファイルは `datasetVersion` を含む JSON です。
+出力ファイルは `datasetVersion` を含む JSON です（`--out` が相対パスの場合はリポジトリルート基準）。
 
 ## フロントエンド起動（ローカル）
 
@@ -56,7 +68,10 @@ gh auth login
 pnpm frontend:dev
 ```
 
-ブラウザで表示後、JSON ファイルを選択してダッシュボードを確認します。
+ブラウザで表示後、`JSON読込` ボタンからローカルJSONファイルを選択してダッシュボードを確認します。
+
+- `PR実績` メニュー: PR/Commit/Review の指標とPR番号詳細
+- `Issue実績` メニュー: Done件数、Estimate合計、Estimate未設定件数
 
 ## テスト実行
 
@@ -85,18 +100,6 @@ GITHUB_PAGES=true pnpm frontend:build
 
 - ワークフロー: `.github/workflows/deploy-pages.yml`
 - `main` ブランチへ push 後に自動デプロイ
-
-## 評価資料準備時間の計測（SC-004）
-
-```bash
-./scripts/measure-report-prep-time.sh start
-# ... 評価資料作成作業 ...
-./scripts/measure-report-prep-time.sh stop
-```
-
-詳細手順:
-
-- `specs/001-github-activity-dashboard/checklists/reporting-time-benchmark.md`
 
 ## 主要ディレクトリ
 

@@ -32,6 +32,39 @@
         {{ item.reviewRate }}
       </span>
     </template>
+
+    <template #[`item.prCreated`]="{ item }">
+      <v-btn
+        variant="text"
+        size="small"
+        :disabled="item.prDetails.createdPrNumbers.length === 0"
+        @click="openDetails(item, 'created')"
+      >
+        {{ item.prCreated }}
+      </v-btn>
+    </template>
+
+    <template #[`item.prMerged`]="{ item }">
+      <v-btn
+        variant="text"
+        size="small"
+        :disabled="item.prDetails.mergedPrNumbers.length === 0"
+        @click="openDetails(item, 'merged')"
+      >
+        {{ item.prMerged }}
+      </v-btn>
+    </template>
+
+    <template #[`item.reviewedPrs`]="{ item }">
+      <v-btn
+        variant="text"
+        size="small"
+        :disabled="item.prDetails.reviewedPrNumbers.length === 0"
+        @click="openDetails(item, 'reviewed')"
+      >
+        {{ item.reviewedPrs }}
+      </v-btn>
+    </template>
   </v-data-table>
 </template>
 
@@ -41,6 +74,17 @@ import type { ContributorRow } from '../services/toDashboardViewModel.js';
 defineProps<{
   contributors: ContributorRow[];
 }>();
+
+const emit = defineEmits<{
+  (e: 'show-pr-details', payload: {
+    contributor: ContributorRow;
+    kind: 'created' | 'merged' | 'reviewed';
+  }): void;
+}>();
+
+function openDetails(contributor: ContributorRow, kind: 'created' | 'merged' | 'reviewed'): void {
+  emit('show-pr-details', { contributor, kind });
+}
 
 const headers = [
   { title: 'ログイン', key: 'login', sortable: true },

@@ -7,8 +7,14 @@ import {
     SEARCH_REVIEWED_PRS_QUERY,
 } from '../github/queries.js';
 import { aggregate, type RawCommit, type RawPr } from './aggregate.js';
+import { collectIssueMetrics } from './collectIssueMetrics.js';
 import type { CollectRequest } from './collectRequest.js';
-import type { Dataset, Warning } from './schema.js';
+import type {
+    Dataset,
+    IssueContributorMetrics,
+    IssueMetricsSummary,
+    Warning,
+} from './schema.js';
 import {
     createGraphqlErrorWarning,
     createRepoAccessWarning,
@@ -87,7 +93,7 @@ export async function collectActivity(
     input: CollectActivityInput
 ): Promise<CollectActivityOutput> {
     const { client, request } = input;
-    const { period, repositories, logins } = request;
+    const { period, repositories, logins, project } = request;
 
     const warnings: Warning[] = [];
     const rawPrs: RawPr[] = [];
@@ -95,11 +101,15 @@ export async function collectActivity(
     // login -> reviewedPrCount, reviewCommentCount
     const reviewMap = new Map<
         string,
-        { reviewedPrCount: number; reviewCommentCount: number }
+        { reviewedPrCount: number; reviewCommentCount: number; reviewedPrNumbers: number[] }
     >();
 
     for (const login of logins) {
-        reviewMap.set(login, { reviewedPrCount: 0, reviewCommentCount: 0 });
+        reviewMap.set(login, {
+            reviewedPrCount: 0,
+            reviewCommentCount: 0,
+            reviewedPrNumbers: [],
+        });
     }
 
     // --- PR 収集（担当者 × リポジトリ）---
@@ -171,6 +181,7 @@ export async function collectActivity(
                 for (const pr of reviewedPrs) {
                     entry.reviewedPrCount += 1;
                     entry.reviewCommentCount += pr.commentCount;
+                    entry.reviewedPrNumbers.push(pr.number);
                 }
             } catch {
                 // レビュー取得失敗は warning を追加するが集計は継続
@@ -192,7 +203,13 @@ export async function collectActivity(
     for (const contributor of contributors) {
         const review = reviewMap.get(contributor.login);
         if (review) {
-            contributor.reviews = review;
+            contributor.reviews = {
+                reviewedPrCount: review.reviewedPrCount,
+                reviewCommentCount: review.reviewCommentCount,
+            };
+            contributor.prDetails.reviewedPrNumbers = Array.from(
+                new Set(review.reviewedPrNumbers)
+            );
             // レビュー指標が変わったので派生指標を再計算
             const { createdCount } = contributor.prs;
             const { reviewedPrCount, reviewCommentCount } = review;
@@ -203,16 +220,64 @@ export async function collectActivity(
         }
     }
 
+    let issueMetrics: IssueMetricsSummary | undefined;
+    if (project) {
+        try {
+            issueMetrics = await collectIssueMetrics({
+                client,
+                project,
+                period,
+                logins,
+            });
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            warnings.push(
+                createGraphqlErrorWarning(
+                    `GitHub Project ${project.owner} #${project.number} の issue 集計取得に失敗しました: ${msg}`
+                )
+            );
+            issueMetrics = createEmptyIssueMetrics({
+                owner: project.owner,
+                number: project.number,
+                period,
+                logins,
+            });
+        }
+    }
+
     const dataset: Dataset = {
-        datasetVersion: '1.0.0',
+        datasetVersion: '1.1.0',
         generatedAt: new Date().toISOString(),
         period,
         repositories: repositories.map((r) => ({ owner: r.owner, name: r.name })),
         contributors,
+        issueMetrics,
         warnings,
     };
 
     return { dataset };
+}
+
+function createEmptyIssueMetrics(params: {
+    owner: string;
+    number: number;
+    period: { from: string; to: string };
+    logins: string[];
+}): IssueMetricsSummary {
+    const empty = (login: string): IssueContributorMetrics => ({
+        login,
+        doneCount: 0,
+        estimateTotal: 0,
+        estimateMissingCount: 0,
+        doneIssueNumbers: [],
+    });
+
+    return {
+        projectId: `${params.owner}#${params.number}`,
+        period: params.period,
+        contributors: params.logins.map((login) => empty(login)),
+        unassigned: empty('unassigned'),
+    };
 }
 
 // -----------------------------------------------------------------

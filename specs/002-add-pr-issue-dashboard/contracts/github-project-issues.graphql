@@ -1,0 +1,71 @@
+# GitHub Project issue取得契約（collector用）
+# 目的: 期間内にDoneへ遷移したissueを担当者別に集計するための最小項目を取得する。
+
+query ProjectIssuesForDoneMetrics(
+  $owner: String!
+  $projectNumber: Int!
+  $first: Int!
+  $after: String
+) {
+  organization(login: $owner) {
+    projectV2(number: $projectNumber) {
+      id
+      title
+      items(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          content {
+            ... on Issue {
+              number
+              title
+              closedAt
+              assignees(first: 20) {
+                nodes {
+                  login
+                }
+              }
+            }
+          }
+          fieldValues(first: 50) {
+            nodes {
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                name
+                field {
+                  ... on ProjectV2SingleSelectField {
+                    name
+                  }
+                }
+              }
+              ... on ProjectV2ItemFieldNumberValue {
+                number
+                field {
+                  ... on ProjectV2Field {
+                    name
+                  }
+                }
+              }
+              ... on ProjectV2ItemFieldDateValue {
+                date
+                field {
+                  ... on ProjectV2Field {
+                    name
+                  }
+                }
+              }
+            }
+          }
+          updatedAt
+        }
+      }
+    }
+  }
+}
+
+# 変換ルール（collector側）
+# - Done判定: field.name が "Status"（または設定値）で value.name == "Done"
+# - Estimate値: field.name が "Estimate"（または設定値）の number
+# - doneAt: 可能ならDone日付フィールドを優先し、なければ item.updatedAt を代替

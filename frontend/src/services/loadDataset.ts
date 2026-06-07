@@ -41,7 +41,7 @@ export async function loadDataset(file: File): Promise<Dataset> {
         );
     }
 
-    const SUPPORTED_VERSIONS = ['1.0.0'];
+    const SUPPORTED_VERSIONS = ['1.0.0', '1.1.0'];
     if (!SUPPORTED_VERSIONS.includes(obj['datasetVersion'] as string)) {
         throw new DatasetLoadError(
             `サポートされていないバージョン: ${String(obj['datasetVersion'])}。最新の収集ツールで再取得してください。`
@@ -55,5 +55,23 @@ export async function loadDataset(file: File): Promise<Dataset> {
         }
     }
 
-    return json as Dataset;
+    const dataset = json as Dataset;
+
+    // 後方互換: 旧データセットに prDetails がない場合は空配列を補完
+    for (const contributor of dataset.contributors) {
+        if (!contributor.prDetails) {
+            contributor.prDetails = {
+                createdPrNumbers: [],
+                mergedPrNumbers: [],
+                reviewedPrNumbers: [],
+            };
+        }
+    }
+
+    // 後方互換: issueMetrics 未収集データでもUIで扱えるように undefined を許容
+    if (!('issueMetrics' in dataset)) {
+        dataset.issueMetrics = undefined;
+    }
+
+    return dataset;
 }

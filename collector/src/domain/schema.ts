@@ -36,12 +36,35 @@ export const DerivedMetricsSchema = z.object({
     mergeRate: z.number().nullable(),
 });
 
+export const PrDetailsSchema = z.object({
+    createdPrNumbers: z.array(z.number().int().min(1)).default([]),
+    mergedPrNumbers: z.array(z.number().int().min(1)).default([]),
+    reviewedPrNumbers: z.array(z.number().int().min(1)).default([]),
+});
+
+export const IssueContributorMetricsSchema = z
+    .object({
+        login: z.string().min(1),
+        doneCount: z.number().int().min(0),
+        estimateTotal: z.number().min(0),
+        estimateMissingCount: z.number().int().min(0),
+        doneIssueNumbers: z.array(z.number().int().min(1)),
+    })
+    .refine((value) => value.doneIssueNumbers.length === value.doneCount, {
+        message: 'doneIssueNumbers.length は doneCount と一致する必要があります',
+    });
+
 export const ContributorMetricsSchema = z.object({
     login: z.string().min(1),
     prs: PrMetricsSchema,
     commits: CommitMetricsSchema,
     reviews: ReviewMetricsSchema,
     derived: DerivedMetricsSchema,
+    prDetails: PrDetailsSchema.default({
+        createdPrNumbers: [],
+        mergedPrNumbers: [],
+        reviewedPrNumbers: [],
+    }),
 });
 
 export const PeriodSchema = z
@@ -66,6 +89,13 @@ export const WarningSchema = z.object({
     contributor: z.string().optional(),
 });
 
+export const IssueMetricsSummarySchema = z.object({
+    projectId: z.string().min(1),
+    period: PeriodSchema,
+    contributors: z.array(IssueContributorMetricsSchema),
+    unassigned: IssueContributorMetricsSchema,
+});
+
 // -----------------------------------------------------------------
 // トップレベル Dataset スキーマ
 // -----------------------------------------------------------------
@@ -77,6 +107,7 @@ export const DatasetSchema = z.object({
     period: PeriodSchema,
     repositories: z.array(RepositoryRefSchema),
     contributors: z.array(ContributorMetricsSchema),
+    issueMetrics: IssueMetricsSummarySchema.optional(),
     warnings: z.array(WarningSchema).default([]),
 });
 
@@ -89,6 +120,9 @@ export type PrMetrics = z.infer<typeof PrMetricsSchema>;
 export type CommitMetrics = z.infer<typeof CommitMetricsSchema>;
 export type ReviewMetrics = z.infer<typeof ReviewMetricsSchema>;
 export type DerivedMetrics = z.infer<typeof DerivedMetricsSchema>;
+export type PrDetails = z.infer<typeof PrDetailsSchema>;
+export type IssueContributorMetrics = z.infer<typeof IssueContributorMetricsSchema>;
+export type IssueMetricsSummary = z.infer<typeof IssueMetricsSummarySchema>;
 export type ContributorMetrics = z.infer<typeof ContributorMetricsSchema>;
 export type Period = z.infer<typeof PeriodSchema>;
 export type RepositoryRef = z.infer<typeof RepositoryRefSchema>;

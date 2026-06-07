@@ -1,5 +1,14 @@
 <template>
   <v-container max-width="1200">
+    <input
+      ref="fileInputRef"
+      data-testid="json-file-input"
+      type="file"
+      accept=".json"
+      class="d-none"
+      @change="onFileChange"
+    />
+
     <!-- ページタイトル -->
     <v-row class="mb-4">
       <v-col>
@@ -18,8 +27,9 @@
       <v-col>
         <ErrorStateBanner
           :message="error"
+          action-label="JSON読込"
           @close="reset"
-          @retry="reset"
+          @retry="openFilePicker"
         />
       </v-col>
     </v-row>
@@ -32,23 +42,16 @@
             <v-icon icon="mdi-file-upload-outline" size="64" color="primary" class="mb-4" />
             <div class="text-h6 mb-2">データセット JSON を選択</div>
             <div class="text-body-2 text-medium-emphasis mb-4">
-              <code>scripts/export-activity-json.sh</code> で生成した JSON ファイルを指定してください
+              scripts/export-activity-json.sh で生成した JSON ファイルを指定してください
             </div>
             <v-btn
+              data-testid="json-load-button"
               color="primary"
               prepend-icon="mdi-folder-open"
               @click="openFilePicker"
             >
-              ファイルを開く
+              JSON読込
             </v-btn>
-            <!-- 非表示ファイル入力（ログイン機能は提供しない） -->
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept=".json"
-              class="d-none"
-              @change="onFileChange"
-            />
           </v-card>
         </v-col>
       </v-row>
@@ -66,22 +69,50 @@
     <template v-else-if="viewModel">
       <!-- ヘッダー情報 -->
       <v-row class="mb-2">
-        <v-col>
-          <v-chip class="mr-2" prepend-icon="mdi-calendar-range" size="small">
+        <v-col class="d-flex flex-wrap align-center ga-2">
+          <v-chip prepend-icon="mdi-calendar-range" size="small">
             {{ viewModel.period.from }} ～ {{ viewModel.period.to }}
           </v-chip>
           <v-chip prepend-icon="mdi-account-group" size="small">
             {{ viewModel.kpi.contributorCount }}名
           </v-chip>
+          <v-chip v-if="activeView === 'issue' && viewModel.issueMetrics" prepend-icon="mdi-view-dashboard" size="small">
+            {{ viewModel.issueMetrics.projectId }}
+          </v-chip>
           <v-btn
+            data-testid="json-load-button"
             variant="text"
             size="small"
             prepend-icon="mdi-file-replace-outline"
-            class="ml-2"
-            @click="reset"
+            @click="openFilePicker"
           >
-            ファイルを変更
+            JSON読込
           </v-btn>
+        </v-col>
+      </v-row>
+
+      <v-row class="mb-4">
+        <v-col>
+          <div class="text-subtitle-2 mb-2">表示メニュー</div>
+          <div class="text-body-2 text-medium-emphasis mb-2">PR分析とIssue分析を切り替えて確認できます</div>
+          <div class="d-flex ga-2">
+            <v-btn
+              data-testid="menu-pr"
+              :variant="activeView === 'pr' ? 'flat' : 'outlined'"
+              color="primary"
+              @click="activeView = 'pr'"
+            >
+            PR実績
+            </v-btn>
+            <v-btn
+              data-testid="menu-issue"
+              :variant="activeView === 'issue' ? 'flat' : 'outlined'"
+              color="primary"
+              @click="activeView = 'issue'"
+            >
+            Issue実績
+            </v-btn>
+          </div>
         </v-col>
       </v-row>
 
@@ -94,19 +125,59 @@
         </v-col>
       </v-row>
 
-      <!-- KPI カード -->
-      <v-row class="mb-4">
-        <v-col>
-          <KpiCards :kpi="viewModel.kpi" />
-        </v-col>
-      </v-row>
+      <template v-if="activeView === 'pr'">
+        <!-- KPI カード -->
+        <v-row class="mb-4">
+          <v-col>
+            <KpiCards :kpi="viewModel.kpi" />
+          </v-col>
+        </v-row>
 
-      <!-- 担当者テーブル -->
-      <v-row>
-        <v-col>
-          <ContributorTable :contributors="viewModel.contributors" />
-        </v-col>
-      </v-row>
+        <!-- 担当者テーブル -->
+        <v-row>
+          <v-col>
+            <ContributorTable
+              :contributors="viewModel.contributors"
+              @show-pr-details="onShowPrDetails"
+            />
+          </v-col>
+        </v-row>
+
+        <v-dialog v-model="prDetailsDialog" max-width="640">
+          <v-card>
+            <v-card-title class="d-flex align-center justify-space-between">
+              <span>PR番号詳細</span>
+              <v-btn icon="mdi-close" variant="text" @click="prDetailsDialog = false" />
+            </v-card-title>
+            <v-card-text v-if="selectedContributor">
+              <PrDetailsAccordion
+                :details="selectedContributor.prDetails"
+                :initial-open="initialOpenSection"
+              />
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+      </template>
+
+      <template v-else>
+        <v-row v-if="!viewModel.issueMetrics">
+          <v-col>
+            <ErrorStateBanner
+              title="Issue 実績は未収集です"
+              message="このJSONには issueMetrics が含まれていません。GitHub Project を指定して再収集したJSONを読み込んでください。"
+              type="info"
+              action-label="JSON読込"
+              @close="activeView = 'pr'"
+              @retry="openFilePicker"
+            />
+          </v-col>
+        </v-row>
+        <v-row v-else>
+          <v-col>
+            <IssueMetricsTable :rows="viewModel.issueMetrics.rows" />
+          </v-col>
+        </v-row>
+      </template>
     </template>
   </v-container>
 </template>
@@ -114,12 +185,19 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useDatasetLoader } from '../composables/useDatasetLoader.js';
-import KpiCards from '../components/KpiCards.vue';
 import ContributorTable from '../components/ContributorTable.vue';
 import ErrorStateBanner from '../components/ErrorStateBanner.vue';
+import IssueMetricsTable from '../components/IssueMetricsTable.vue';
+import KpiCards from '../components/KpiCards.vue';
+import PrDetailsAccordion from '../components/PrDetailsAccordion.vue';
+import type { ContributorRow } from '../services/toDashboardViewModel.js';
 
 const { viewModel, isLoading, error, onFileSelected, reset } = useDatasetLoader();
 const fileInputRef = ref<HTMLInputElement | null>(null);
+const prDetailsDialog = ref(false);
+const selectedContributor = ref<ContributorRow | null>(null);
+const initialOpenSection = ref<'created' | 'merged' | 'reviewed'>('created');
+const activeView = ref<'pr' | 'issue'>('pr');
 
 function openFilePicker(): void {
   fileInputRef.value?.click();
@@ -130,7 +208,15 @@ async function onFileChange(event: Event): Promise<void> {
   const file = input.files?.[0];
   if (!file) return;
   await onFileSelected(file);
-  // 同一ファイルを再選択できるようにリセット
   input.value = '';
+}
+
+function onShowPrDetails(payload: {
+  contributor: ContributorRow;
+  kind: 'created' | 'merged' | 'reviewed';
+}): void {
+  selectedContributor.value = payload.contributor;
+  initialOpenSection.value = payload.kind;
+  prDetailsDialog.value = true;
 }
 </script>
