@@ -34,3 +34,5 @@ data/
 
 # pnpm
 .pnpm-store/
+
+frontend/.vite/

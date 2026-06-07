@@ -116,7 +116,9 @@ describe('datasetSchema', () => {
                             doneCount: 1,
                             estimateTotal: 3,
                             estimateMissingCount: 0,
-                            doneIssueNumbers: [10],
+                            doneIssues: [
+                                { number: 10, title: 'Fix bug', url: 'https://github.com/org/repo/issues/10' },
+                            ],
                         },
                     ],
                     unassigned: {
@@ -124,7 +126,7 @@ describe('datasetSchema', () => {
                         doneCount: 0,
                         estimateTotal: 0,
                         estimateMissingCount: 0,
-                        doneIssueNumbers: [],
+                        doneIssues: [],
                     },
                 },
             };

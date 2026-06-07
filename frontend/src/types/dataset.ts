@@ -42,12 +42,18 @@ export interface PrDetails {
     reviewedPrNumbers: number[];
 }
 
+export interface DoneIssueItem {
+    number: number;
+    title: string;
+    url: string;
+}
+
 export interface IssueContributorMetrics {
     login: string;
     doneCount: number;
     estimateTotal: number;
     estimateMissingCount: number;
-    doneIssueNumbers: number[];
+    doneIssues: DoneIssueItem[];
 }
 
 export interface IssueMetricsSummary {

@@ -32,6 +32,7 @@ export interface ProjectIssueItem {
     content?: {
         number?: number;
         title?: string;
+        url?: string;
         closedAt?: string | null;
         assignees?: {
             nodes: Array<{
@@ -46,6 +47,8 @@ export interface ProjectIssueItem {
 
 export interface ProjectIssueEvent {
     issueNumber: number;
+    title: string;
+    url: string;
     assignees: string[];
     doneAt: string;
     estimate: number | null;
@@ -68,7 +71,7 @@ interface AggregateIssueMetricsInput {
 }
 
 interface MutableIssueContributorMetrics extends IssueContributorMetrics {
-    doneIssueNumbers: number[];
+    doneIssues: DoneIssueItem[];
     seen: Set<number>;
 }
 
@@ -139,6 +142,8 @@ export function extractProjectIssueEvents(
 
         return [{
             issueNumber,
+            title: item.content?.title ?? '',
+            url: item.content?.url ?? '',
             assignees,
             // Done日付フィールドが無い場合は closedAt を優先し、最後に updatedAt を使う。
             doneAt: doneAt ?? item.content?.closedAt ?? item.updatedAt,
@@ -188,7 +193,7 @@ function applyEvent(target: MutableIssueContributorMetrics, event: ProjectIssueE
     }
 
     target.seen.add(event.issueNumber);
-    target.doneIssueNumbers.push(event.issueNumber);
+    target.doneIssues.push({ number: event.issueNumber, title: event.title, url: event.url });
     target.doneCount += 1;
 
     if (typeof event.estimate === 'number') {
@@ -205,7 +210,7 @@ function createMutableMetrics(login: string): MutableIssueContributorMetrics {
         doneCount: 0,
         estimateTotal: 0,
         estimateMissingCount: 0,
-        doneIssueNumbers: [],
+        doneIssues: [],
         seen: new Set<number>(),
     };
 }
@@ -216,7 +221,7 @@ function stripMutableFields(metrics: MutableIssueContributorMetrics): IssueContr
         doneCount: metrics.doneCount,
         estimateTotal: metrics.estimateTotal,
         estimateMissingCount: metrics.estimateMissingCount,
-        doneIssueNumbers: metrics.doneIssueNumbers,
+        doneIssues: metrics.doneIssues,
     };
 }
 

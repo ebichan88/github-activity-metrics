@@ -145,6 +145,7 @@ export const GET_PROJECT_ISSUES_QUERY = `
               ... on Issue {
                 number
                 title
+                url
                 closedAt
                 assignees(first: 20) {
                   nodes {
@@ -202,6 +203,7 @@ export const GET_PROJECT_ISSUES_QUERY = `
               ... on Issue {
                 number
                 title
+                url
                 closedAt
                 assignees(first: 20) {
                   nodes {

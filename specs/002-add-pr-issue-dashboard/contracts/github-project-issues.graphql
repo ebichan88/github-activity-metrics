@@ -22,6 +22,7 @@ query ProjectIssuesForDoneMetrics(
             ... on Issue {
               number
               title
+              url
               closedAt
               assignees(first: 20) {
                 nodes {

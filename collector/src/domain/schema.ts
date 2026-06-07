@@ -42,16 +42,22 @@ export const PrDetailsSchema = z.object({
     reviewedPrNumbers: z.array(z.number().int().min(1)).default([]),
 });
 
+export const DoneIssueItemSchema = z.object({
+    number: z.number().int().min(1),
+    title: z.string(),
+    url: z.string(),
+});
+
 export const IssueContributorMetricsSchema = z
     .object({
         login: z.string().min(1),
         doneCount: z.number().int().min(0),
         estimateTotal: z.number().min(0),
         estimateMissingCount: z.number().int().min(0),
-        doneIssueNumbers: z.array(z.number().int().min(1)),
+        doneIssues: z.array(DoneIssueItemSchema),
     })
-    .refine((value) => value.doneIssueNumbers.length === value.doneCount, {
-        message: 'doneIssueNumbers.length は doneCount と一致する必要があります',
+    .refine((value) => value.doneIssues.length === value.doneCount, {
+        message: 'doneIssues.length は doneCount と一致する必要があります',
     });
 
 export const ContributorMetricsSchema = z.object({
@@ -122,6 +128,7 @@ export type ReviewMetrics = z.infer<typeof ReviewMetricsSchema>;
 export type DerivedMetrics = z.infer<typeof DerivedMetricsSchema>;
 export type PrDetails = z.infer<typeof PrDetailsSchema>;
 export type IssueContributorMetrics = z.infer<typeof IssueContributorMetricsSchema>;
+export type DoneIssueItem = z.infer<typeof DoneIssueItemSchema>;
 export type IssueMetricsSummary = z.infer<typeof IssueMetricsSummarySchema>;
 export type ContributorMetrics = z.infer<typeof ContributorMetricsSchema>;
 export type Period = z.infer<typeof PeriodSchema>;

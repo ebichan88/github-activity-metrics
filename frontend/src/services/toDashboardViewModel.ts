@@ -1,4 +1,4 @@
-import type { ContributorMetrics, Dataset } from '../types/dataset.js';
+import type { ContributorMetrics, Dataset, DoneIssueItem } from '../types/dataset.js';
 
 /** KPI サマリー（全担当者合算） */
 export interface KpiSummary {
@@ -36,7 +36,7 @@ export interface IssueContributorRow {
     doneCount: number;
     estimateTotal: number;
     estimateMissingCount: number;
-    doneIssueNumbers: number[];
+    doneIssues: DoneIssueItem[];
     isUnassigned: boolean;
 }
 
@@ -104,7 +104,7 @@ export function toDashboardViewModel(dataset: Dataset): DashboardViewModel {
                     doneCount: contributor.doneCount,
                     estimateTotal: contributor.estimateTotal,
                     estimateMissingCount: contributor.estimateMissingCount,
-                    doneIssueNumbers: contributor.doneIssueNumbers,
+                    doneIssues: contributor.doneIssues,
                     isUnassigned: false,
                 })),
                 ...((dataset.issueMetrics.unassigned.doneCount > 0 || dataset.issueMetrics.unassigned.estimateMissingCount > 0)
@@ -114,7 +114,7 @@ export function toDashboardViewModel(dataset: Dataset): DashboardViewModel {
                         doneCount: dataset.issueMetrics.unassigned.doneCount,
                         estimateTotal: dataset.issueMetrics.unassigned.estimateTotal,
                         estimateMissingCount: dataset.issueMetrics.unassigned.estimateMissingCount,
-                        doneIssueNumbers: dataset.issueMetrics.unassigned.doneIssueNumbers,
+                        doneIssues: dataset.issueMetrics.unassigned.doneIssues,
                         isUnassigned: true,
                     }]
                     : []),
