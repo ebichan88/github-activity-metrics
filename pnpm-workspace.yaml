@@ -1,0 +1,5 @@
+packages:
+  - "collector"
+  - "frontend"
+allowBuilds:
+  esbuild: true

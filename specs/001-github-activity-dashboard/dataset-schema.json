@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github-activity-metrics.local/schemas/dataset-schema.json",
+  "title": "GitHub Activity Dataset",
+  "description": "GitHub活動実績ローカルダッシュボードが扱うデータセットのJSONスキーマ",
+  "type": "object",
+  "required": ["datasetVersion", "generatedAt", "period", "repositories", "contributors"],
+  "additionalProperties": false,
+  "properties": {
+    "datasetVersion": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "sourceType": { "type": "string", "enum": ["enterprise-cloud", "personal"] },
+    "period": {
+      "type": "object", "required": ["from", "to"], "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "format": "date" },
+        "to": { "type": "string", "format": "date" }
+      }
+    },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["owner", "name"], "additionalProperties": false,
+        "properties": {
+          "owner": { "type": "string" },
+          "name": { "type": "string" },
+          "visibility": { "type": "string", "enum": ["public", "private", "internal"] }
+        }
+      }
+    },
+    "contributors": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["login", "prs", "commits", "reviews", "derived"],
+        "additionalProperties": false,
+        "properties": {
+          "login": { "type": "string" },
+          "prs": {
+            "type": "object", "required": ["createdCount", "closedCount", "mergedCount", "relatedIssues"],
+            "additionalProperties": false,
+            "properties": {
+              "createdCount": { "type": "integer", "minimum": 0 },
+              "closedCount": { "type": "integer", "minimum": 0 },
+              "mergedCount": { "type": "integer", "minimum": 0 },
+              "relatedIssues": {
+                "type": "array",
+                "items": {
+                  "type": "object", "required": ["prNumber", "repository", "issueRef"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "prNumber": { "type": "integer" },
+                    "repository": { "type": "string" },
+                    "issueRef": { "type": "string" },
+                    "keyword": { "type": "string", "enum": ["Fixes", "Closes", "Resolved"] }
+                  }
+                }
+              }
+            }
+          },
+          "commits": {
+            "type": "object", "required": ["commitCount", "additions", "deletions"],
+            "additionalProperties": false,
+            "properties": {
+              "commitCount": { "type": "integer", "minimum": 0 },
+              "additions": { "type": "integer", "minimum": 0 },
+              "deletions": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "reviews": {
+            "type": "object", "required": ["reviewedPrCount", "reviewCommentCount"],
+            "additionalProperties": false,
+            "properties": {
+              "reviewedPrCount": { "type": "integer", "minimum": 0 },
+              "reviewCommentCount": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "derived": {
+            "type": "object",
+            "required": ["reviewRate", "averagePrSize", "averageReviewComments", "mergeRate"],
+            "additionalProperties": false,
+            "properties": {
+              "reviewRate": { "type": ["number", "null"] },
+              "averagePrSize": { "type": ["number", "null"] },
+              "averageReviewComments": { "type": ["number", "null"] },
+              "mergeRate": { "type": ["number", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["code", "message"], "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "repository": { "type": "string" },
+          "contributor": { "type": "string" }
+        }
+      }
+    }
+  }
+}
