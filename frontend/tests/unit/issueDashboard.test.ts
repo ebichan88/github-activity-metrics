@@ -71,8 +71,8 @@ describe('IssueMetricsTable', () => {
         expect(modalText).toContain('#11: Add feature');
 
         const links = wrapper.findAll('.issue-link');
-        expect(links[0].attributes('href')).toBe('https://github.com/org/repo/issues/10');
-        expect(links[1].attributes('href')).toBe('https://github.com/org/repo/issues/11');
+        expect(links[0]?.attributes('href')).toBe('https://github.com/org/repo/issues/10');
+        expect(links[1]?.attributes('href')).toBe('https://github.com/org/repo/issues/11');
     });
 
     it('doneIssues が空の場合は詳細ボタンではなく - を表示する', () => {
