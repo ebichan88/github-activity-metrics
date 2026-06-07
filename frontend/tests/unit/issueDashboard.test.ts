@@ -9,6 +9,7 @@ describe('IssueMetricsTable', () => {
                 rows: [
                     {
                         login: 'alice',
+                        displayLogin: 'alice',
                         doneCount: 3,
                         estimateTotal: 8,
                         estimateMissingCount: 1,
@@ -17,13 +18,14 @@ describe('IssueMetricsTable', () => {
                     },
                     {
                         login: 'unassigned',
+                        displayLogin: '未割り当て',
                         doneCount: 1,
                         estimateTotal: 0,
                         estimateMissingCount: 1,
                         doneIssueNumbers: [110],
                         isUnassigned: true,
                     },
-                ],
+                ]
             },
         });
 
