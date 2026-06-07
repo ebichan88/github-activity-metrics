@@ -2,14 +2,14 @@ import type { DerivedMetrics } from './schema.js';
 
 /** calcDerivedMetrics の入力型 */
 export interface CalcDerivedMetricsInput {
-  createdCount: number;
-  mergedCount: number;
-  reviewedPrCount: number;
-  reviewCommentCount: number;
-  /** PR の additions 合計 */
-  totalAdditions: number;
-  /** PR の deletions 合計 */
-  totalDeletions: number;
+    createdCount: number;
+    mergedCount: number;
+    reviewedPrCount: number;
+    reviewCommentCount: number;
+    /** PR の additions 合計 */
+    totalAdditions: number;
+    /** PR の deletions 合計 */
+    totalDeletions: number;
 }
 
 /**
@@ -17,28 +17,28 @@ export interface CalcDerivedMetricsInput {
  * 分母が 0 の場合は null を返す（ゼロ除算回避）
  */
 export function calcDerivedMetrics(input: CalcDerivedMetricsInput): DerivedMetrics {
-  const {
-    createdCount,
-    mergedCount,
-    reviewedPrCount,
-    reviewCommentCount,
-    totalAdditions,
-    totalDeletions,
-  } = input;
+    const {
+        createdCount,
+        mergedCount,
+        reviewedPrCount,
+        reviewCommentCount,
+        totalAdditions,
+        totalDeletions,
+    } = input;
 
-  const reviewRate =
-    createdCount === 0 ? null : reviewedPrCount / createdCount;
+    const reviewRate =
+        createdCount === 0 ? null : reviewedPrCount / createdCount;
 
-  const averagePrSize =
-    createdCount === 0
-      ? null
-      : (totalAdditions + totalDeletions) / createdCount;
+    const averagePrSize =
+        createdCount === 0
+            ? null
+            : (totalAdditions + totalDeletions) / createdCount;
 
-  const averageReviewComments =
-    reviewedPrCount === 0 ? null : reviewCommentCount / reviewedPrCount;
+    const averageReviewComments =
+        reviewedPrCount === 0 ? null : reviewCommentCount / reviewedPrCount;
 
-  const mergeRate =
-    createdCount === 0 ? null : mergedCount / createdCount;
+    const mergeRate =
+        createdCount === 0 ? null : mergedCount / createdCount;
 
-  return { reviewRate, averagePrSize, averageReviewComments, mergeRate };
+    return { reviewRate, averagePrSize, averageReviewComments, mergeRate };
 }

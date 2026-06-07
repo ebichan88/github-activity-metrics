@@ -91,7 +91,7 @@ program
         const repoCount = repositories.length;
         const contributorCount = dataset.contributors.length;
         console.error(
-          `[perf] repos=${repoCount} contributors=${contributorCount} elapsed=${elapsed}s`
+            `[perf] repos=${repoCount} contributors=${contributorCount} elapsed=${elapsed}s`
         );
 
         if (dataset.warnings.length > 0) {

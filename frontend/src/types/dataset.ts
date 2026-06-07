@@ -5,69 +5,69 @@
  */
 
 export interface RelatedIssueLink {
-  prNumber: number;
-  repository: string;
-  issueRef: string;
-  keyword?: 'Fixes' | 'Closes' | 'Resolved';
+    prNumber: number;
+    repository: string;
+    issueRef: string;
+    keyword?: 'Fixes' | 'Closes' | 'Resolved';
 }
 
 export interface PrMetrics {
-  createdCount: number;
-  closedCount: number;
-  mergedCount: number;
-  relatedIssues: RelatedIssueLink[];
+    createdCount: number;
+    closedCount: number;
+    mergedCount: number;
+    relatedIssues: RelatedIssueLink[];
 }
 
 export interface CommitMetrics {
-  commitCount: number;
-  additions: number;
-  deletions: number;
+    commitCount: number;
+    additions: number;
+    deletions: number;
 }
 
 export interface ReviewMetrics {
-  reviewedPrCount: number;
-  reviewCommentCount: number;
+    reviewedPrCount: number;
+    reviewCommentCount: number;
 }
 
 export interface DerivedMetrics {
-  reviewRate: number | null;
-  averagePrSize: number | null;
-  averageReviewComments: number | null;
-  mergeRate: number | null;
+    reviewRate: number | null;
+    averagePrSize: number | null;
+    averageReviewComments: number | null;
+    mergeRate: number | null;
 }
 
 export interface ContributorMetrics {
-  login: string;
-  prs: PrMetrics;
-  commits: CommitMetrics;
-  reviews: ReviewMetrics;
-  derived: DerivedMetrics;
+    login: string;
+    prs: PrMetrics;
+    commits: CommitMetrics;
+    reviews: ReviewMetrics;
+    derived: DerivedMetrics;
 }
 
 export interface Period {
-  from: string;
-  to: string;
+    from: string;
+    to: string;
 }
 
 export interface RepositoryRef {
-  owner: string;
-  name: string;
-  visibility?: 'public' | 'private' | 'internal';
+    owner: string;
+    name: string;
+    visibility?: 'public' | 'private' | 'internal';
 }
 
 export interface Warning {
-  code: string;
-  message: string;
-  repository?: string;
-  contributor?: string;
+    code: string;
+    message: string;
+    repository?: string;
+    contributor?: string;
 }
 
 export interface Dataset {
-  datasetVersion: string;
-  generatedAt: string;
-  sourceType?: 'enterprise-cloud' | 'personal';
-  period: Period;
-  repositories: RepositoryRef[];
-  contributors: ContributorMetrics[];
-  warnings: Warning[];
+    datasetVersion: string;
+    generatedAt: string;
+    sourceType?: 'enterprise-cloud' | 'personal';
+    period: Period;
+    repositories: RepositoryRef[];
+    contributors: ContributorMetrics[];
+    warnings: Warning[];
 }

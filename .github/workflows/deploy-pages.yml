@@ -25,7 +25,7 @@ jobs:
       - name: Node.js セットアップ
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: pnpm セットアップ
         uses: pnpm/action-setup@v4
@@ -38,7 +38,7 @@ jobs:
       - name: フロントエンドビルド
         run: pnpm frontend:build
         env:
-          GITHUB_PAGES: 'true'
+          GITHUB_PAGES: "true"
 
       - name: Pages アーティファクトのアップロード
         uses: actions/upload-pages-artifact@v3
