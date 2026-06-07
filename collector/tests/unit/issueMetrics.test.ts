@@ -13,6 +13,7 @@ function createItem(input: {
     doneDate?: string | null;
     closedAt?: string | null;
     updatedAt?: string;
+    url?: string;
 }): ProjectIssueItem {
     return {
         id: `item-${input.issueNumber}`,
@@ -20,6 +21,7 @@ function createItem(input: {
         content: {
             number: input.issueNumber,
             title: `Issue ${input.issueNumber}`,
+            url: input.url ?? `https://github.com/org/repo/issues/${input.issueNumber}`,
             closedAt: input.closedAt ?? null,
             assignees: {
                 nodes: (input.assignees ?? []).map((login) => ({ login })),
@@ -72,6 +74,8 @@ describe('issueMetrics', () => {
         expect(events).toEqual([
             {
                 issueNumber: 10,
+                title: 'Issue 10',
+                url: 'https://github.com/org/repo/issues/10',
                 assignees: ['alice'],
                 doneAt: '2026-05-10T00:00:00Z',
                 estimate: 3,
@@ -79,6 +83,8 @@ describe('issueMetrics', () => {
             },
             {
                 issueNumber: 11,
+                title: 'Issue 11',
+                url: 'https://github.com/org/repo/issues/11',
                 assignees: ['alice', 'bob'],
                 doneAt: '2026-05-12T12:00:00Z',
                 estimate: null,
@@ -95,6 +101,8 @@ describe('issueMetrics', () => {
             events: [
                 {
                     issueNumber: 10,
+                    title: 'Fix login bug',
+                    url: 'https://github.com/org/repo/issues/10',
                     assignees: ['alice'],
                     doneAt: '2026-05-10T00:00:00Z',
                     estimate: 3,
@@ -102,6 +110,8 @@ describe('issueMetrics', () => {
                 },
                 {
                     issueNumber: 11,
+                    title: 'Add dashboard',
+                    url: 'https://github.com/org/repo/issues/11',
                     assignees: ['alice', 'bob'],
                     doneAt: '2026-05-12T12:00:00Z',
                     estimate: null,
@@ -109,6 +119,8 @@ describe('issueMetrics', () => {
                 },
                 {
                     issueNumber: 12,
+                    title: 'Update docs',
+                    url: 'https://github.com/org/repo/issues/12',
                     assignees: [],
                     doneAt: '2026-05-20T08:30:00Z',
                     estimate: 5,
@@ -116,6 +128,8 @@ describe('issueMetrics', () => {
                 },
                 {
                     issueNumber: 13,
+                    title: 'Out of period',
+                    url: 'https://github.com/org/repo/issues/13',
                     assignees: ['alice'],
                     doneAt: '2026-06-01T00:00:00Z',
                     estimate: 8,
@@ -133,14 +147,19 @@ describe('issueMetrics', () => {
                     doneCount: 2,
                     estimateTotal: 3,
                     estimateMissingCount: 1,
-                    doneIssueNumbers: [10, 11],
+                    doneIssues: [
+                        { number: 10, title: 'Fix login bug', url: 'https://github.com/org/repo/issues/10' },
+                        { number: 11, title: 'Add dashboard', url: 'https://github.com/org/repo/issues/11' },
+                    ],
                 },
                 {
                     login: 'bob',
                     doneCount: 1,
                     estimateTotal: 0,
                     estimateMissingCount: 1,
-                    doneIssueNumbers: [11],
+                    doneIssues: [
+                        { number: 11, title: 'Add dashboard', url: 'https://github.com/org/repo/issues/11' },
+                    ],
                 },
             ],
             unassigned: {
@@ -148,7 +167,9 @@ describe('issueMetrics', () => {
                 doneCount: 1,
                 estimateTotal: 5,
                 estimateMissingCount: 0,
-                doneIssueNumbers: [12],
+                doneIssues: [
+                    { number: 12, title: 'Update docs', url: 'https://github.com/org/repo/issues/12' },
+                ],
             },
         });
     });
@@ -160,6 +181,7 @@ describe('issueMetrics', () => {
             content: {
                 number: 21,
                 title: 'Issue 21',
+                url: 'https://github.com/org/repo/issues/21',
                 assignees: {
                     nodes: [{ login: 'alice' }],
                 },
@@ -189,6 +211,8 @@ describe('issueMetrics', () => {
         expect(events).toEqual([
             {
                 issueNumber: 21,
+                title: 'Issue 21',
+                url: 'https://github.com/org/repo/issues/21',
                 assignees: ['alice'],
                 doneAt: '2026-05-15T09:00:00Z',
                 estimate: 5,
@@ -212,6 +236,8 @@ describe('issueMetrics', () => {
         expect(events).toEqual([
             {
                 issueNumber: 30,
+                title: 'Issue 30',
+                url: 'https://github.com/org/repo/issues/30',
                 assignees: ['alice'],
                 doneAt: '2025-04-20T10:00:00Z',
                 estimate: 2,

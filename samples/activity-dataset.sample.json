@@ -104,10 +104,22 @@
                 "doneCount": 3,
                 "estimateTotal": 8,
                 "estimateMissingCount": 1,
-                "doneIssueNumbers": [
-                    10,
-                    11,
-                    12
+                "doneIssues": [
+                    {
+                        "number": 10,
+                        "title": "Fix authentication bug",
+                        "url": "https://github.com/example/repo/issues/10"
+                    },
+                    {
+                        "number": 11,
+                        "title": "Add dashboard feature",
+                        "url": "https://github.com/example/repo/issues/11"
+                    },
+                    {
+                        "number": 12,
+                        "title": "Update documentation",
+                        "url": "https://github.com/example/repo/issues/12"
+                    }
                 ]
             },
             {
@@ -115,8 +127,12 @@
                 "doneCount": 1,
                 "estimateTotal": 2,
                 "estimateMissingCount": 0,
-                "doneIssueNumbers": [
-                    14
+                "doneIssues": [
+                    {
+                        "number": 14,
+                        "title": "Refactor API client",
+                        "url": "https://github.com/example/repo/issues/14"
+                    }
                 ]
             }
         ],
@@ -125,8 +141,12 @@
             "doneCount": 1,
             "estimateTotal": 0,
             "estimateMissingCount": 1,
-            "doneIssueNumbers": [
-                15
+            "doneIssues": [
+                {
+                    "number": 15,
+                    "title": "Review configuration",
+                    "url": "https://github.com/example/repo/issues/15"
+                }
             ]
         }
     },
