@@ -1,50 +1,103 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+同期影響レポート
+- バージョン変更: なし -> 1.0.0
+- 変更された原則:
+	- 追加: I. シンプルさ優先
+	- 追加: II. 保守性重視
+	- 追加: III. テスト容易性
+	- 追加: IV. Local First
+	- 追加: V. ユーザー体験
+- 追加されたセクション:
+	- 追加制約
+	- 開発ワークフローと品質ゲート
+- 削除されたセクション: なし
+- 更新が必要なテンプレート:
+	- ✅ 更新済み: .specify/templates/plan-template.md
+	- ✅ 更新済み: .specify/templates/spec-template.md
+	- ✅ 更新済み: .specify/templates/tasks-template.md
+	- ⚠ 保留中: .specify/README.md (ファイル未存在のためスタイルガイド参照不可)
+- フォローアップTODO:
+	- TODO(STYLE_GUIDE_SOURCE): .specify/README.md が未存在のため、用語集・スタイルガイドの正本を確定する
+-->
+
+# GitHub Activity Metrics Constitution
+
+- [Core Principles](#core-principles)
+	- [I. シンプルさ優先](#i-シンプルさ優先)
+	- [II. 保守性重視](#ii-保守性重視)
+	- [III. テスト容易性](#iii-テスト容易性)
+	- [IV. Local First](#iv-local-first)
+	- [V. ユーザー体験](#v-ユーザー体験)
+- [追加制約](#追加制約)
+- [開発ワークフローと品質ゲート](#開発ワークフローと品質ゲート)
+- [Governance](#governance)
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. シンプルさ優先
+本プロジェクトは個人利用を主目的とし、実装は常に最小の構成で成立させる。新規設計を追加する場合、
+提案者は「既存実装では解決できない理由」を明示しなければならない。過度な抽象化、将来予測に基づく
+拡張ポイントの先行実装、未使用のレイヤー追加を禁止する。
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+根拠: 利用者と開発者が同一である前提では、過剰設計による複雑化コストが将来利益を上回りやすいため。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. 保守性重視
+コードは可読性を最優先し、責務分離と命名の明確性を維持する。各モジュールは単一の主責務を持ち、
+重複コードは共通化または削除で解消する。変更時は周辺影響が読める構造を維持し、暗黙仕様に依存する
+実装を避ける。
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+根拠: 長期運用では、機能追加速度よりも安全な変更容易性が開発効率を決定するため。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. テスト容易性
+集計ロジック、変換処理、指標計算などのコア機能にはユニットテストを必須とする。外部サービス通信、
+ファイルI/O、時刻依存処理は境界を分離し、モックまたはスタブで置換可能なインターフェース経由で扱う。
+テスト不能な設計は設計不備として修正対象とする。
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+根拠: 正確性が価値の中心である集計系プロジェクトでは、再現可能な検証基盤が不可欠なため。
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Local First
+GitHubから取得したデータはローカル保存を可能にし、保存済みデータのみで可視化・再集計を実行できる
+構成を維持する。ネットワーク接続は取得・同期フェーズに限定し、分析フェーズはオフラインで完結可能な
+実装を優先する。
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+根拠: API制限や一時的障害の影響を最小化し、再現性の高い分析フローを確保するため。
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. ユーザー体験
+ユーザー操作は最小手順で完了できることを必須要件とする。データ取得・分析フローは「迷わない順序」で
+提示し、設定項目は必要最小限に限定する。複雑な分岐や専門知識前提の操作は、明確な価値が証明されない
+限り導入しない。
+
+根拠: 個人利用で最も重要なのは高機能性より継続的に使える操作負荷の低さであるため。
+
+## 追加制約
+
+- 技術選定は「導入コスト < 継続運用コスト削減」が説明できるものに限定する。
+- 永続化形式は将来の再処理を想定し、破壊的変更時には移行手順を文書化する。
+- 例外処理は握りつぶしを禁止し、原因追跡に必要な文脈情報を残す。
+- ドキュメントは実装と同一PRで更新し、動作仕様と乖離させない。
+
+## 開発ワークフローと品質ゲート
+
+- 変更着手前に対象機能の責務境界を明示し、影響範囲を確認する。
+- コアロジック変更では、ユニットテストの追加または更新をマージ条件とする。
+- 外部サービス連携変更では、モック可能性をレビュー観点として必須確認する。
+- Local First要件に関わる変更では、オフライン再実行の手順を検証し記録する。
+- UIまたはCLI導線変更では、手順数削減または同等維持を確認する。
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+本憲章は本リポジトリの設計・実装・レビュー判断における最上位規約とし、他ドキュメントと矛盾する場合は
+本憲章を優先する。
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- 改定手続き:
+	- 改定提案には、変更理由、影響範囲、既存運用との差分を含める。
+	- 改定はPRで実施し、関連テンプレートとの整合確認を完了してから承認する。
+- バージョニングポリシー (SemVer):
+	- MAJOR: 原則の削除や後方互換性のない再定義。
+	- MINOR: 新原則または新セクションの追加、実質的な運用拡張。
+	- PATCH: 文言明確化、誤記修正、意味を変えない改善。
+- コンプライアンスレビュー:
+	- すべてのPRは本憲章の5原則への適合を確認する。
+	- 非適合が必要な場合は、理由と代替案を「Complexity Tracking」等に記録し承認を得る。
+
+**Version**: 1.0.0 | **Ratified**: 2026-06-07 | **Last Amended**: 2026-06-07

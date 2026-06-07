@@ -93,6 +93,15 @@
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
 
+### Constitution Alignment *(mandatory)*
+
+- 設計は過度な抽象化を避け、最小構成で要件を満たすこと。
+- 可読性と責務分離を優先し、重複実装を放置しないこと。
+- 集計ロジック等のコア機能に対するユニットテスト要件を明記すること。
+- 外部サービス連携はモック可能な境界を定義すること。
+- GitHub取得データのローカル保存とオフライン再集計要件を明記すること。
+- ユーザー操作を最小手順で完了できる受け入れ条件を含めること。
+
 *Example of marking unclear requirements:*
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]

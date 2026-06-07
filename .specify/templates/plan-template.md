@@ -40,7 +40,11 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Simplicity First: 提案設計は最小構成か。過度な抽象化や未使用レイヤーを含まないか。
+- Maintainability: 責務分離、重複排除、変更影響の追跡可能性が担保されているか。
+- Testability: コア集計ロジックのユニットテスト方針と、外部通信のモック境界が定義されているか。
+- Local First: 取得データのローカル保存と、保存済みデータのみでの再集計フローが設計されているか。
+- UX: データ取得・分析の操作手順が最小化され、複雑な設定導線を増やしていないか。
 
 ## Project Structure
 
