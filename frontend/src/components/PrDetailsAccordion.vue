@@ -61,4 +61,10 @@ const sections = computed(() => [
   cursor: pointer;
   font-weight: 600;
 }
+
+.pr-details-accordion ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 8px 0 0;
+}
 </style>
