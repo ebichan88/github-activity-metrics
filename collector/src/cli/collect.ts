@@ -25,6 +25,8 @@ program
     .requiredOption('--repos <repos>', 'カンマ区切りのリポジトリ一覧 (owner/name,owner/name,...)')
     .requiredOption('--contributors <logins>', 'カンマ区切りの GitHub ログイン一覧')
     .requiredOption('--out <path>', '出力 JSON ファイルパス')
+    .option('--project-owner <owner>', 'GitHub Project の owner（Issue集計時）')
+    .option('--project-number <number>', 'GitHub Project の番号（Issue集計時）')
     .option('--source-type <type>', 'アカウント種別 (enterprise-cloud | personal)', 'personal')
     .action(async (options: {
         from: string;
@@ -32,6 +34,8 @@ program
         repos: string;
         contributors: string;
         out: string;
+        projectOwner?: string;
+        projectNumber?: string;
         sourceType: string;
     }) => {
         const startTime = Date.now();
@@ -52,11 +56,26 @@ program
 
         const logins = options.contributors.split(',').map((l) => l.trim());
 
+        const hasProjectOwner = typeof options.projectOwner === 'string' && options.projectOwner.length > 0;
+        const hasProjectNumber = typeof options.projectNumber === 'string' && options.projectNumber.length > 0;
+        if (hasProjectOwner !== hasProjectNumber) {
+            console.error('[error] --project-owner と --project-number は両方指定するか、どちらも省略してください。');
+            process.exit(1);
+        }
+
+        const project = hasProjectOwner
+            ? {
+                owner: options.projectOwner as string,
+                number: Number(options.projectNumber),
+            }
+            : undefined;
+
         // 入力バリデーション
         const parseResult = CollectRequestSchema.safeParse({
             period: { from: options.from, to: options.to },
             repositories,
             logins,
+            project,
         });
 
         if (!parseResult.success) {
@@ -72,6 +91,9 @@ program
         console.error(`[info] 収集を開始します: ${options.from} ～ ${options.to}`);
         console.error(`[info] リポジトリ: ${repositories.map((r) => `${r.owner}/${r.name}`).join(', ')}`);
         console.error(`[info] 担当者: ${logins.join(', ')}`);
+        if (project) {
+            console.error(`[info] GitHub Project: ${project.owner} #${project.number}`);
+        }
 
         const { dataset } = await collectActivity({
             client,

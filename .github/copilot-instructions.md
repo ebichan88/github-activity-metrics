@@ -19,5 +19,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at /home/takashi-ebina/github-activity-metrics/specs/001-github-activity-dashboard/plan.md
+at /home/takashi-ebina/github-activity-metrics/specs/001-add-pr-issue-dashboard/plan.md
 <!-- SPECKIT END -->

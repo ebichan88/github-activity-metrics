@@ -1,5 +1,8 @@
 <template>
   <!-- 主要 KPI カード群 -->
+  <div class="text-body-2 text-medium-emphasis mb-2">
+    PR実績ビューの集計結果です。Issue実績は「Issue実績」メニューで確認してください。
+  </div>
   <v-row>
     <v-col v-for="card in cards" :key="card.label" cols="12" sm="6" md="4">
       <v-card variant="outlined">

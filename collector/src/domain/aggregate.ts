@@ -58,6 +58,11 @@ export function aggregate(input: AggregateInput): ContributorMetrics[] {
             })
         );
 
+        const createdPrNumbers = myPrs.map((pr) => pr.number);
+        const mergedPrNumbers = myPrs
+            .filter((pr) => pr.state === 'MERGED')
+            .map((pr) => pr.number);
+
         // コミット指標（コミット履歴から計上）
         const commitCount = myCommits.length;
         const additions = myCommits.reduce((sum, c) => sum + c.additions, 0);
@@ -88,6 +93,11 @@ export function aggregate(input: AggregateInput): ContributorMetrics[] {
             commits: { commitCount, additions, deletions },
             reviews: { reviewedPrCount, reviewCommentCount },
             derived: { reviewRate, averagePrSize, averageReviewComments, mergeRate },
+            prDetails: {
+                createdPrNumbers,
+                mergedPrNumbers,
+                reviewedPrNumbers: [],
+            },
         };
     });
 }

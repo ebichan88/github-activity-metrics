@@ -15,6 +15,11 @@ function emptyContributor(login: string): ContributorMetrics {
             averageReviewComments: null,
             mergeRate: null,
         },
+        prDetails: {
+            createdPrNumbers: [],
+            mergedPrNumbers: [],
+            reviewedPrNumbers: [],
+        },
     };
 }
 
@@ -51,6 +56,9 @@ describe('aggregate', () => {
             expect(c.prs.createdCount).toBe(1);
             expect(c.prs.mergedCount).toBe(1);
             expect(c.prs.closedCount).toBe(0);
+            expect(c.prDetails.createdPrNumbers).toEqual([1]);
+            expect(c.prDetails.mergedPrNumbers).toEqual([1]);
+            expect(c.prDetails.reviewedPrNumbers).toEqual([]);
         });
 
         it('複数リポジトリの PR を合算する', () => {

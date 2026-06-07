@@ -36,12 +36,34 @@ export interface DerivedMetrics {
     mergeRate: number | null;
 }
 
+export interface PrDetails {
+    createdPrNumbers: number[];
+    mergedPrNumbers: number[];
+    reviewedPrNumbers: number[];
+}
+
+export interface IssueContributorMetrics {
+    login: string;
+    doneCount: number;
+    estimateTotal: number;
+    estimateMissingCount: number;
+    doneIssueNumbers: number[];
+}
+
+export interface IssueMetricsSummary {
+    projectId: string;
+    period: Period;
+    contributors: IssueContributorMetrics[];
+    unassigned: IssueContributorMetrics;
+}
+
 export interface ContributorMetrics {
     login: string;
     prs: PrMetrics;
     commits: CommitMetrics;
     reviews: ReviewMetrics;
     derived: DerivedMetrics;
+    prDetails?: PrDetails;
 }
 
 export interface Period {
@@ -69,5 +91,6 @@ export interface Dataset {
     period: Period;
     repositories: RepositoryRef[];
     contributors: ContributorMetrics[];
+    issueMetrics?: IssueMetricsSummary;
     warnings: Warning[];
 }

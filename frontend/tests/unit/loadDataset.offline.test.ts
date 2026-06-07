@@ -79,5 +79,25 @@ describe('loadDataset オフライン読込テスト', () => {
             expect(vm.hasWarnings).toBe(true);
             expect(vm.warningCount).toBe(1);
         });
+
+        it('issueMetrics が欠損していてもオフライン読込できる', () => {
+            const dataset = makeDataset({
+                datasetVersion: '1.0.0',
+                contributors: [
+                    {
+                        login: 'user1',
+                        prs: { createdCount: 1, closedCount: 0, mergedCount: 1, relatedIssues: [] },
+                        commits: { commitCount: 1, additions: 10, deletions: 2 },
+                        reviews: { reviewedPrCount: 0, reviewCommentCount: 0 },
+                        derived: { reviewRate: 0, averagePrSize: 12.0, averageReviewComments: null, mergeRate: 1.0 },
+                    },
+                ],
+            });
+
+            const vm = toDashboardViewModel(dataset);
+            expect(vm.issueMetrics).toBeNull();
+            expect(vm.contributors).toHaveLength(1);
+            expect(vm.kpi.totalPrCreated).toBe(1);
+        });
     });
 });

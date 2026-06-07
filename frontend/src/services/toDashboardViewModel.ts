@@ -23,6 +23,26 @@ export interface ContributorRow {
     reviewedPrs: number;
     reviewRate: string;
     relatedIssueCount: number;
+    prDetails: {
+        createdPrNumbers: number[];
+        mergedPrNumbers: number[];
+        reviewedPrNumbers: number[];
+    };
+}
+
+export interface IssueContributorRow {
+    login: string;
+    displayLogin: string;
+    doneCount: number;
+    estimateTotal: number;
+    estimateMissingCount: number;
+    doneIssueNumbers: number[];
+    isUnassigned: boolean;
+}
+
+export interface IssueMetricsViewModel {
+    projectId: string;
+    rows: IssueContributorRow[];
 }
 
 /** ダッシュボード全体の表示用 ViewModel */
@@ -31,6 +51,7 @@ export interface DashboardViewModel {
     generatedAt: string;
     kpi: KpiSummary;
     contributors: ContributorRow[];
+    issueMetrics: IssueMetricsViewModel | null;
     hasWarnings: boolean;
     warningCount: number;
 }
@@ -66,13 +87,47 @@ export function toDashboardViewModel(dataset: Dataset): DashboardViewModel {
         reviewedPrs: c.reviews.reviewedPrCount,
         reviewRate: toPercentStr(c.derived.reviewRate),
         relatedIssueCount: c.prs.relatedIssues.length,
+        prDetails: c.prDetails ?? {
+            createdPrNumbers: [],
+            mergedPrNumbers: [],
+            reviewedPrNumbers: [],
+        },
     }));
+
+    const issueMetrics = dataset.issueMetrics
+        ? {
+            projectId: dataset.issueMetrics.projectId,
+            rows: [
+                ...dataset.issueMetrics.contributors.map((contributor) => ({
+                    login: contributor.login,
+                    displayLogin: contributor.login,
+                    doneCount: contributor.doneCount,
+                    estimateTotal: contributor.estimateTotal,
+                    estimateMissingCount: contributor.estimateMissingCount,
+                    doneIssueNumbers: contributor.doneIssueNumbers,
+                    isUnassigned: false,
+                })),
+                ...((dataset.issueMetrics.unassigned.doneCount > 0 || dataset.issueMetrics.unassigned.estimateMissingCount > 0)
+                    ? [{
+                        login: dataset.issueMetrics.unassigned.login,
+                        displayLogin: '未割り当て',
+                        doneCount: dataset.issueMetrics.unassigned.doneCount,
+                        estimateTotal: dataset.issueMetrics.unassigned.estimateTotal,
+                        estimateMissingCount: dataset.issueMetrics.unassigned.estimateMissingCount,
+                        doneIssueNumbers: dataset.issueMetrics.unassigned.doneIssueNumbers,
+                        isUnassigned: true,
+                    }]
+                    : []),
+            ],
+        }
+        : null;
 
     return {
         period,
         generatedAt,
         kpi,
         contributors: rows,
+        issueMetrics,
         hasWarnings: warnings.length > 0,
         warningCount: warnings.length,
     };

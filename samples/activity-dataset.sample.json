@@ -1,6 +1,6 @@
 {
-    "datasetVersion": "1.0.0",
-    "generatedAt": "2026-06-01T00:00:00Z",
+    "datasetVersion": "1.1.0",
+    "generatedAt": "2026-06-07T00:00:00Z",
     "sourceType": "personal",
     "period": {
         "from": "2026-05-01",
@@ -11,49 +11,43 @@
             "owner": "example",
             "name": "repo-a",
             "visibility": "public"
-        },
-        {
-            "owner": "example",
-            "name": "repo-b",
-            "visibility": "private"
         }
     ],
     "contributors": [
         {
             "login": "user1",
             "prs": {
-                "createdCount": 5,
-                "closedCount": 1,
-                "mergedCount": 4,
+                "createdCount": 2,
+                "closedCount": 0,
+                "mergedCount": 2,
                 "relatedIssues": [
                     {
                         "prNumber": 42,
                         "repository": "example/repo-a",
                         "issueRef": "#10",
                         "keyword": "Fixes"
-                    },
-                    {
-                        "prNumber": 45,
-                        "repository": "example/repo-a",
-                        "issueRef": "#15",
-                        "keyword": "Closes"
                     }
                 ]
             },
             "commits": {
-                "commitCount": 20,
-                "additions": 350,
-                "deletions": 120
+                "commitCount": 7,
+                "additions": 200,
+                "deletions": 80
             },
             "reviews": {
-                "reviewedPrCount": 8,
-                "reviewCommentCount": 15
+                "reviewedPrCount": 3,
+                "reviewCommentCount": 6
             },
             "derived": {
-                "reviewRate": 1.6,
-                "averagePrSize": 94.0,
-                "averageReviewComments": 1.875,
-                "mergeRate": 0.8
+                "reviewRate": 1.5,
+                "averagePrSize": 140.0,
+                "averageReviewComments": 2.0,
+                "mergeRate": 1.0
+            },
+            "prDetails": {
+                "createdPrNumbers": [42, 45],
+                "mergedPrNumbers": [42, 45],
+                "reviewedPrNumbers": [40, 41, 44]
             }
         },
         {
@@ -65,27 +59,56 @@
                 "relatedIssues": []
             },
             "commits": {
-                "commitCount": 3,
-                "additions": 50,
-                "deletions": 10
+                "commitCount": 1,
+                "additions": 10,
+                "deletions": 2
             },
             "reviews": {
-                "reviewedPrCount": 2,
-                "reviewCommentCount": 4
+                "reviewedPrCount": 1,
+                "reviewCommentCount": 1
             },
             "derived": {
                 "reviewRate": null,
                 "averagePrSize": null,
-                "averageReviewComments": 2.0,
+                "averageReviewComments": 1.0,
                 "mergeRate": null
+            },
+            "prDetails": {
+                "createdPrNumbers": [],
+                "mergedPrNumbers": [],
+                "reviewedPrNumbers": [45]
             }
         }
     ],
-    "warnings": [
-        {
-            "code": "PARTIAL_DATA",
-            "message": "example/repo-b のデータ取得が部分的にしか完了しませんでした",
-            "repository": "example/repo-b"
+    "issueMetrics": {
+        "projectId": "example#12",
+        "period": {
+            "from": "2026-05-01",
+            "to": "2026-05-31"
+        },
+        "contributors": [
+            {
+                "login": "user1",
+                "doneCount": 3,
+                "estimateTotal": 8,
+                "estimateMissingCount": 1,
+                "doneIssueNumbers": [10, 11, 12]
+            },
+            {
+                "login": "user2",
+                "doneCount": 1,
+                "estimateTotal": 2,
+                "estimateMissingCount": 0,
+                "doneIssueNumbers": [14]
+            }
+        ],
+        "unassigned": {
+            "login": "unassigned",
+            "doneCount": 1,
+            "estimateTotal": 0,
+            "estimateMissingCount": 1,
+            "doneIssueNumbers": [15]
         }
-    ]
+    },
+    "warnings": []
 }

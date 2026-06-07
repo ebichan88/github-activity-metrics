@@ -1,7 +1,7 @@
 <template>
   <!-- 復旧可能なエラー表示バナー -->
   <v-alert
-    type="error"
+    :type="type"
     variant="tonal"
     :title="title"
     :text="message"
@@ -12,10 +12,10 @@
       <v-btn
         v-if="canRetry"
         variant="text"
-        color="error"
+        :color="type"
         @click="$emit('retry')"
       >
-        別のファイルを選択
+        {{ actionLabel }}
       </v-btn>
     </template>
   </v-alert>
@@ -27,10 +27,14 @@ withDefaults(
     message: string;
     title?: string;
     canRetry?: boolean;
+    type?: 'error' | 'warning' | 'info' | 'success';
+    actionLabel?: string;
   }>(),
   {
     title: 'データの読み込みに失敗しました',
     canRetry: true,
+    type: 'error',
+    actionLabel: '別のファイルを選択',
   }
 );
 

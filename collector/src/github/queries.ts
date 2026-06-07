@@ -1,6 +1,10 @@
 /**
  * GitHub GraphQL クエリ定義
  * 各クエリは100件ずつページング取得する設計
+ *
+ * 契約同期元:
+ * - specs/001-add-pr-issue-dashboard/contracts/github-project-issues.graphql
+ * 仕様変更時は上記契約を先に更新し、このファイルへ反映する。
  */
 
 /**
@@ -116,25 +120,153 @@ export const GET_COMMITS_QUERY = `
 `;
 
 /**
+ * GitHub Project の Issue item を取得するクエリ
+ * organization / user のどちらの owner でも解決できるよう両方を問い合わせる
+ */
+export const GET_PROJECT_ISSUES_QUERY = `
+  query ProjectIssuesForDoneMetrics(
+    $owner: String!
+    $projectNumber: Int!
+    $first: Int!
+    $after: String
+  ) {
+    organization(login: $owner) {
+      projectV2(number: $projectNumber) {
+        id
+        title
+        items(first: $first, after: $after) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            id
+            content {
+              ... on Issue {
+                number
+                title
+                closedAt
+                assignees(first: 20) {
+                  nodes {
+                    login
+                  }
+                }
+              }
+            }
+            fieldValues(first: 50) {
+              nodes {
+                __typename
+                ... on ProjectV2ItemFieldSingleSelectValue {
+                  name
+                  field {
+                    ... on ProjectV2SingleSelectField {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldNumberValue {
+                  number
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldDateValue {
+                  date
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+            updatedAt
+          }
+        }
+      }
+    }
+    user(login: $owner) {
+      projectV2(number: $projectNumber) {
+        id
+        title
+        items(first: $first, after: $after) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            id
+            content {
+              ... on Issue {
+                number
+                title
+                closedAt
+                assignees(first: 20) {
+                  nodes {
+                    login
+                  }
+                }
+              }
+            }
+            fieldValues(first: 50) {
+              nodes {
+                __typename
+                ... on ProjectV2ItemFieldSingleSelectValue {
+                  name
+                  field {
+                    ... on ProjectV2SingleSelectField {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldNumberValue {
+                  number
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldDateValue {
+                  date
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+            updatedAt
+          }
+        }
+      }
+    }
+  }
+`;
+
+/**
  * PR author 用の検索クエリ文字列を構築する
  */
 export function buildPrAuthorSearchQuery(params: {
-    login: string;
-    repoFullName: string;
-    from: string;
-    to: string;
+  login: string;
+  repoFullName: string;
+  from: string;
+  to: string;
 }): string {
-    return `type:pr author:${params.login} repo:${params.repoFullName} created:${params.from}..${params.to}`;
+  return `type:pr author:${params.login} repo:${params.repoFullName} created:${params.from}..${params.to}`;
 }
 
 /**
  * PR reviewer 用の検索クエリ文字列を構築する
  */
 export function buildPrReviewerSearchQuery(params: {
-    login: string;
-    repoFullName: string;
-    from: string;
-    to: string;
+  login: string;
+  repoFullName: string;
+  from: string;
+  to: string;
 }): string {
-    return `type:pr reviewed-by:${params.login} repo:${params.repoFullName} created:${params.from}..${params.to}`;
+  return `type:pr reviewed-by:${params.login} repo:${params.repoFullName} created:${params.from}..${params.to}`;
 }

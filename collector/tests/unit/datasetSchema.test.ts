@@ -82,6 +82,57 @@ describe('datasetSchema', () => {
             expect(result.success).toBe(true);
         });
 
+        it('prDetails を含む contributor を許容する', () => {
+            const dataset = {
+                datasetVersion: '1.1.0',
+                generatedAt: '2026-05-31T00:00:00Z',
+                period: { from: '2026-05-01', to: '2026-05-31' },
+                repositories: [],
+                contributors: [
+                    {
+                        login: 'user1',
+                        prs: { createdCount: 1, closedCount: 0, mergedCount: 1, relatedIssues: [] },
+                        commits: { commitCount: 1, additions: 10, deletions: 2 },
+                        reviews: { reviewedPrCount: 1, reviewCommentCount: 3 },
+                        derived: {
+                            reviewRate: 1,
+                            averagePrSize: 12,
+                            averageReviewComments: 3,
+                            mergeRate: 1,
+                        },
+                        prDetails: {
+                            createdPrNumbers: [1],
+                            mergedPrNumbers: [1],
+                            reviewedPrNumbers: [1],
+                        },
+                    },
+                ],
+                issueMetrics: {
+                    projectId: 'org#1',
+                    period: { from: '2026-05-01', to: '2026-05-31' },
+                    contributors: [
+                        {
+                            login: 'user1',
+                            doneCount: 1,
+                            estimateTotal: 3,
+                            estimateMissingCount: 0,
+                            doneIssueNumbers: [10],
+                        },
+                    ],
+                    unassigned: {
+                        login: 'unassigned',
+                        doneCount: 0,
+                        estimateTotal: 0,
+                        estimateMissingCount: 0,
+                        doneIssueNumbers: [],
+                    },
+                },
+            };
+
+            const result = DatasetSchema.safeParse(dataset);
+            expect(result.success).toBe(true);
+        });
+
         it('count フィールドが負の値の場合はバリデーション失敗', () => {
             const dataset = {
                 datasetVersion: '1.0.0',
